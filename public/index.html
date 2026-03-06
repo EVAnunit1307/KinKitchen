@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video / Image Upload</title>
+  <style>
+    * { box-sizing: border-box; }
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    input[type="file"] { margin: 0.5rem 0; display: block; }
+    button { padding: 0.5rem 1rem; cursor: pointer; }
+    .url { margin-top: 1rem; word-break: break-all; font-size: 0.875rem; color: #333; }
+    .error { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>Upload video or image</h1>
+  <form id="uploadForm">
+    <input type="file" name="file" id="file" accept="video/*,image/*" required>
+    <button type="submit">Upload to Cloudinary</button>
+  </form>
+  <div id="result"></div>
+
+  <script>
+    document.getElementById('uploadForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const resultEl = document.getElementById('result');
+      resultEl.innerHTML = 'Uploading…';
+      resultEl.className = '';
+
+      const formData = new FormData();
+      formData.append('file', document.getElementById('file').files[0]);
+
+      try {
+        const res = await fetch('/api/upload', { method: 'POST', body: formData });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || 'Upload failed');
+        resultEl.className = 'url';
+        resultEl.innerHTML = `URL: <a href="${data.url}" target="_blank">${data.url}</a>`;
+      } catch (err) {
+        resultEl.className = 'error';
+        resultEl.textContent = err.message;
+      }
+    });
+  </script>
+</body>
+</html>
