@@ -5,6 +5,7 @@ const path     = require('path');
 const { upload: uploadToCloudinary } = require('../services/cloudinary');
 const { analyzeImageContent }        = require('../services/cloudinary-analysis');
 const { analyzeMedia }               = require('../services/gemini');
+const { matchRecipes }               = require('../services/recipe-matcher');
 
 // ── Constants ────────────────────────────────────────────────────────────────
 const UPLOAD_DIR        = path.join(__dirname, '..', 'uploads');
@@ -70,6 +71,17 @@ router.post('/', multerUpload.single('file'), async (req, res) => {
       }
     }
 
+    // 4. Match ingredients to Indigenous recipes dataset
+    const ingredients = [];
+    if (contentAnalysis?.foodDetected?.length) {
+      contentAnalysis.foodDetected.forEach((x) =>
+        ingredients.push(typeof x === 'string' ? x : x?.label));
+    }
+    if (boundingBoxes?.length) {
+      boundingBoxes.forEach((b) => b.name && ingredients.push(b.name));
+    }
+    const suggestedRecipes = matchRecipes(ingredients, { minScore: 0.15, maxResults: 16 });
+
     return res.json({
       url,
       publicId,
@@ -78,6 +90,7 @@ router.post('/', multerUpload.single('file'), async (req, res) => {
       analysisError,
       contentAnalysis,
       boundingBoxes,
+      suggestedRecipes,
     });
 
   } catch (err) {

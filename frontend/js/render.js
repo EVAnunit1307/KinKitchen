@@ -51,6 +51,8 @@ function renderAnalysis(data) {
 
       ${renderIndigenousContext(indigenous, recipes, nutrition)}
 
+      ${renderSuggestedRecipes(data.suggestedRecipes || [])}
+
       ${summary ? `
       <div class="result-summary">
         <strong>AI overview —</strong> ${escapeHtml(summary)}
@@ -143,6 +145,32 @@ function renderIndigenousContext(ctx, recipes, nutrition) {
         <p>${escapeHtml(nutrition)}</p>
       </div>` : ''}
 
+    </div>`;
+}
+
+// ── Indigenous recipes you can make (from dataset match) ──────────────────────
+function renderSuggestedRecipes(suggestedRecipes) {
+  if (!suggestedRecipes.length) return '';
+  return `
+    <div class="indigenous-section suggested-recipes">
+      <div class="indigenous-section__header">
+        <span class="indigenous-section__icon" aria-hidden="true">🍲</span>
+        <h2 class="indigenous-section__title">Indigenous recipes you can make</h2>
+      </div>
+      <p class="suggested-recipes__intro">Based on your detected ingredients. Match = how many recipe ingredients you have.</p>
+      <div class="ig-recipe-list suggested-recipes__list">
+        ${suggestedRecipes.map(({ recipe, score, matchedIngredients }) => {
+          const pct = Math.round(score * 100);
+          const matched = (matchedIngredients || []).join(', ') || '—';
+          return `
+          <div class="ig-recipe suggested-recipe">
+            <p class="ig-recipe__name">${escapeHtml(recipe.name)}</p>
+            <p class="ig-recipe__culture">${escapeHtml(recipe.culture || '')}</p>
+            <p class="ig-recipe__desc">${escapeHtml(recipe.description || '')}</p>
+            <p class="suggested-recipe__match">Match: ${pct}% — ${escapeHtml(matched)}</p>
+          </div>`;
+        }).join('')}
+      </div>
     </div>`;
 }
 

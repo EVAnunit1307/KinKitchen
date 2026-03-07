@@ -436,6 +436,21 @@ input[type="file"] {
   color: var(--charcoal);
   line-height: 1.55;
 }
+.ig-recipe__culture {
+  font-size: 0.8rem;
+  color: var(--gray);
+  margin: 0.2rem 0;
+}
+.suggested-recipes__intro {
+  font-size: 0.85rem;
+  color: var(--gray);
+  margin: 0.5rem 0 0.75rem;
+}
+.suggested-recipe__match {
+  font-size: 0.8rem;
+  color: var(--green);
+  margin: 0.35rem 0 0;
+}
 
 /* Nutrition note */
 .ig-nutrition {
