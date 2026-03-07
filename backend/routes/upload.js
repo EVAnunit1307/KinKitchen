@@ -1,26 +1,24 @@
-require('dotenv').config();
 const express = require('express');
-const fs = require('fs');
 const multer = require('multer');
-const { upload: uploadToCloudinary } = require('./services/cloudinary');
-const { analyzeImageContent } = require('./services/cloudinary-analysis');
-const { analyzeMedia } = require('./services/gemini');
+const fs = require('fs');
+const path = require('path');
+const { upload: uploadToCloudinary } = require('../services/cloudinary');
+const { analyzeImageContent } = require('../services/cloudinary-analysis');
+const { analyzeMedia } = require('../services/gemini');
 
-const app = express();
-const PORT = process.env.PORT || 3000;
-const UPLOAD_DIR = 'uploads';
+const UPLOAD_DIR = path.join(__dirname, '..', 'uploads');
 if (!fs.existsSync(UPLOAD_DIR)) fs.mkdirSync(UPLOAD_DIR, { recursive: true });
 
 const multerUpload = multer({ dest: `${UPLOAD_DIR}/`, limits: { fileSize: 100 * 1024 * 1024 } });
 
-app.use(express.static('public'));
+const router = express.Router();
 
-app.post('/api/upload', multerUpload.single('file'), async (req, res) => {
+router.post('/', multerUpload.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded' });
   }
   try {
-    const { url, publicId } = await uploadToCloudinary(req.file.path);
+    const { url, publicId, boundingBoxes } = await uploadToCloudinary(req.file.path);
     fs.unlink(req.file.path, () => {});
 
     const mediaType = (req.file.mimetype || '').startsWith('video/') ? 'video' : 'image';
@@ -41,10 +39,10 @@ app.post('/api/upload', multerUpload.single('file'), async (req, res) => {
       }
     }
 
-    res.json({ url, publicId, mediaType, analysis, analysisError, contentAnalysis });
+    res.json({ url, publicId, mediaType, analysis, analysisError, contentAnalysis, boundingBoxes });
   } catch (err) {
     res.status(500).json({ error: err.message || 'Upload failed' });
   }
 });
 
-app.listen(PORT, () => console.log(`http://localhost:${PORT}`));
+module.exports = router;

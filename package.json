@@ -1,17 +1,9 @@
 {
   "name": "video-analyzer",
-  "version": "1.0.0",
-  "description": "Minimal video/image upload and AI analysis with Cloudinary",
-  "main": "server.js",
+  "private": true,
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js"
-  },
-  "dependencies": {
-    "@google/genai": "^1.44.0",
-    "cloudinary": "^2.5.1",
-    "dotenv": "^16.4.5",
-    "express": "^4.21.0",
-    "multer": "^1.4.5-lts.1"
+    "start": "npm start --prefix backend",
+    "dev": "npm run dev --prefix backend",
+    "install:backend": "npm install --prefix backend"
   }
 }

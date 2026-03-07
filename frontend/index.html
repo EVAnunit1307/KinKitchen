@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Video / Image Upload</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <h1>Upload video or image</h1>
+  <form id="uploadForm">
+    <input type="file" name="file" id="file" accept="video/*,image/*" required>
+    <button type="submit">Upload to Cloudinary</button>
+  </form>
+  <div id="result"></div>
+
+  <script src="js/utils.js"></script>
+  <script src="js/render.js"></script>
+  <script src="js/upload.js"></script>
+</body>
+</html>
