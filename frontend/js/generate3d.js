@@ -428,13 +428,27 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container) {
       const btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
 
-      // Launch in WebXR (or fullscreen on iPhone)
+      // Launch in WebXR (or fullscreen fallback — works on all devices)
       const xrBtn = document.createElement('button');
-      xrBtn.textContent = 'Launch in WebXR / Fullscreen';
+      xrBtn.textContent = 'Immersive View';
       xrBtn.className = 'kitchen3d-btn';
       xrBtn.style.background = 'rgba(200,160,80,0.35)';
       xrBtn.addEventListener('click', () => launchWebXR());
       btnRow.appendChild(xrBtn);
+
+      // Detect WebXR capability and update button label accordingly
+      if (navigator.xr) {
+        Promise.all([
+          navigator.xr.isSessionSupported('immersive-vr').catch(() => false),
+          navigator.xr.isSessionSupported('immersive-ar').catch(() => false),
+        ]).then(([vr, ar]) => {
+          if (vr)      xrBtn.textContent = 'Enter VR (WebXR)';
+          else if (ar) xrBtn.textContent = 'Enter AR (WebXR)';
+          else         xrBtn.textContent = 'Immersive Fullscreen';
+        });
+      } else {
+        xrBtn.textContent = 'Immersive Fullscreen';
+      }
 
       // Unlock Camera
       const camBtn = document.createElement('button');
