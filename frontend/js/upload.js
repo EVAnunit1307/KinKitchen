@@ -1,94 +1,131 @@
-/* global renderAnalysis, mountAR, CookingAR, escapeHtml */
+/* global AkiApp, AkiRender, escapeHtml */
 'use strict';
 
-// ── Upload state machine ──────────────────────────────────────────────────────
-const STEPS = [
-  { id: 'step-upload',  label: 'Uploading photo…' },
-  { id: 'step-analyse', label: 'Analysing ingredients…' },
-  { id: 'step-3d',      label: 'Generating 3D preview…' },
-];
+/**
+ * upload.js — handles file selection + POST /api/upload
+ * Works with the new 8-screen UI via AkiApp.goTo() and AkiRender.*
+ */
+(() => {
+  let _fileInput  = null;
+  let _uploadData = null; // last successful response
 
-function buildProgressHTML() {
-  return `
-    <div class="status-uploading" id="upload-progress" role="status" aria-live="polite">
-      <div class="progress-steps">
-        ${STEPS.map((s, i) => `
-          <div class="progress-step ${i === 0 ? 'progress-step--active' : ''}" id="${s.id}">
-            <div class="progress-step__dot">
-              <div class="spinner${i === 0 ? '' : ' spinner--faint'}"></div>
-            </div>
-            <span>${s.label}</span>
-          </div>
-        `).join('')}
-      </div>
-    </div>`;
-}
+  // ── Progress steps ─────────────────────────────────────────────────────────
+  const STEPS = ['pstep-1','pstep-2','pstep-3'];
 
-function setStep(stepIndex) {
-  STEPS.forEach((s, i) => {
-    const el = document.getElementById(s.id);
+  function setStep(index) {
+    STEPS.forEach((id, i) => {
+      const el = document.getElementById(id);
+      if (!el) return;
+      el.classList.remove('aki-progress__step--active','aki-progress__step--done');
+      if (i < index)  el.classList.add('aki-progress__step--done');
+      if (i === index) el.classList.add('aki-progress__step--active');
+      const spinner = el.querySelector('.spinner');
+      if (spinner) spinner.classList.toggle('spinner--faint', i !== index);
+    });
+  }
+
+  function showProgress(visible) {
+    const zone  = document.getElementById('upload-zone');
+    const prog  = document.getElementById('upload-progress');
+    const or    = document.querySelector('.or-divider');
+    const cam   = document.getElementById('btn-camera-roll');
+    if (zone) zone.style.display  = visible ? 'none' : '';
+    if (prog) prog.style.display  = visible ? ''     : 'none';
+    if (or)   or.style.display    = visible ? 'none' : '';
+    if (cam)  cam.style.display   = visible ? 'none' : '';
+  }
+
+  function showError(message) {
+    const el = document.getElementById('upload-error');
     if (!el) return;
-    el.classList.toggle('progress-step--active',   i === stepIndex);
-    el.classList.toggle('progress-step--done',     i < stepIndex);
-    el.classList.toggle('progress-step--inactive', i > stepIndex);
-    const spinner = el.querySelector('.spinner');
-    if (spinner) spinner.classList.toggle('spinner--faint', i !== stepIndex);
-  });
-}
-
-// ── Main handler ──────────────────────────────────────────────────────────────
-document.getElementById('uploadBtn').addEventListener('click', async () => {
-  const fileInput = document.getElementById('file');
-  const resultEl  = document.getElementById('result');
-  const btn       = document.getElementById('uploadBtn');
-
-  if (!fileInput.files.length) {
-    showError(resultEl, 'Please select an image or video first.');
-    return;
+    el.textContent   = message;
+    el.style.display = message ? '' : 'none';
+    showProgress(false);
   }
 
-  if (window.CookingAR) CookingAR.unmount();
-
-  btn.disabled = true;
-  resultEl.innerHTML = buildProgressHTML();
-
-  const formData = new FormData();
-  formData.append('file', fileInput.files[0]);
-
-  try {
+  // ── Upload ─────────────────────────────────────────────────────────────────
+  async function doUpload(file) {
+    showError('');
+    showProgress(true);
     setStep(0);
-    const res = await fetch('/api/upload', { method: 'POST', body: formData });
 
-    setStep(1);
-    await new Promise(r => setTimeout(r, 120));
+    const formData = new FormData();
+    formData.append('file', file);
 
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
+    try {
+      const res = await fetch('/api/upload', { method: 'POST', body: formData });
+      setStep(1);
+      await new Promise(r => setTimeout(r, 100));
 
-    setStep(2);
-    resultEl.innerHTML = renderAnalysis(data);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Server error (${res.status})`);
 
-    // Give browser 300ms to paint before mounting WebGL
-    setTimeout(() => mountAR(data), 300);
+      setStep(2);
+      await new Promise(r => setTimeout(r, 80));
 
-    // Offer 3D mesh generation if it's an image (teammate feature)
-    const file = fileInput.files[0];
-    if (file && file.type.startsWith('image/') && data.url) {
-      if (typeof addGenerate3dButton === 'function') addGenerate3dButton(data.url);
+      _uploadData = data;
+      AkiApp.state.uploadData = data;
+
+      // Populate all downstream screens
+      showProgress(false);
+      AkiRender.renderDetection(data, file);
+      AkiRender.renderRecipe(data);
+      AkiRender.renderStory(data);
+      AkiRender.renderWord(data);
+
+      // Navigate to detection result
+      AkiApp.goTo('detect');
+
+    } catch (err) {
+      showError(err.message || 'Something went wrong. Please try again.');
     }
-
-  } catch (err) {
-    showError(resultEl, err.message || 'Something went wrong. Please try again.');
-  } finally {
-    btn.disabled = false;
   }
-});
 
-// ── Helpers ───────────────────────────────────────────────────────────────────
-function showError(container, message) {
-  container.innerHTML = `
-    <div class="status-error" role="alert">
-      <span class="status-error__icon" aria-hidden="true">⚠️</span>
-      ${escapeHtml(message)}
-    </div>`;
-}
+  // ── Wire upload zone (click + drag-drop) ──────────────────────────────────
+  function initUploadZone() {
+    const zone = document.getElementById('upload-zone');
+    if (!zone) return;
+
+    zone.addEventListener('click', () => _fileInput?.click());
+
+    zone.addEventListener('dragover', e => {
+      e.preventDefault();
+      zone.classList.add('dragover');
+    });
+    zone.addEventListener('dragleave', () => zone.classList.remove('dragover'));
+    zone.addEventListener('drop', e => {
+      e.preventDefault();
+      zone.classList.remove('dragover');
+      const file = e.dataTransfer.files?.[0];
+      if (file) doUpload(file);
+    });
+  }
+
+  // ── Wire camera roll button ────────────────────────────────────────────────
+  function initCameraRoll() {
+    document.getElementById('btn-camera-roll')?.addEventListener('click', () => {
+      _fileInput?.click();
+    });
+  }
+
+  // ── Wire hidden file input ────────────────────────────────────────────────
+  function initFileInput() {
+    _fileInput = document.getElementById('file-input');
+    if (!_fileInput) return;
+    _fileInput.addEventListener('change', () => {
+      const file = _fileInput.files?.[0];
+      if (file) {
+        doUpload(file);
+        _fileInput.value = ''; // reset so same file can be re-selected
+      }
+    });
+  }
+
+  // ── Init ──────────────────────────────────────────────────────────────────
+  document.addEventListener('DOMContentLoaded', () => {
+    initFileInput();
+    initUploadZone();
+    initCameraRoll();
+  });
+
+})();

@@ -1,59 +1,346 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta name="description" content="Aki reconnects people with Indigenous food traditions. Upload an ingredient photo to discover traditional names, cultural uses, and recipes from Indigenous Nations.">
-  <meta name="theme-color" content="#2D4A35">
-  <title>Aki — Indigenous Food Reconnection</title>
-  <link rel="stylesheet" href="styles.css">
-  <!-- Three.js for 3D storyboard animation -->
-  <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
-  <!-- model-viewer for GLB/glTF preview (teammate generate3d feature) -->
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Aki reconnects people with Indigenous food traditions through AI-powered ingredient recognition and traditional recipes.">
+<meta name="theme-color" content="#1C1C1C">
+<title>Aki — Indigenous Food Reconnection</title>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,600;1,400&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="styles.css">
+<link rel="stylesheet" href="aki-ui.css">
 </head>
 <body>
 
-  <header class="site-header">
-    <h1>Aki</h1>
-    <span class="tagline">Indigenous food reconnection</span>
-  </header>
+<!-- Hidden file input — triggered by upload zone and camera button -->
+<input type="file" id="file-input" accept="image/*,video/*" style="display:none">
 
-  <main>
-    <section class="upload-card" aria-label="Upload ingredient photo">
-      <label for="file">Upload an ingredient photo</label>
-      <div class="upload-row">
-        <input type="file" id="file" name="file" accept="image/*,video/*" required>
-        <button class="btn-primary" type="button" id="uploadBtn">Analyse</button>
-      </div>
-    </section>
+<div class="screens" id="app">
 
-    <div id="result" role="region" aria-live="polite" aria-label="Analysis results"></div>
-  </main>
-
-  <!-- Story modal (teammate TTS/narration feature) -->
-  <div id="story-modal" class="story-modal" role="dialog" aria-modal="true" aria-labelledby="story-modal-title" aria-hidden="true">
-    <div class="story-modal__backdrop"></div>
-    <div class="story-modal__box">
-      <button type="button" class="story-modal__close" aria-label="Close story">×</button>
-      <h2 id="story-modal-title" class="story-modal__title"></h2>
-      <div class="story-modal__character" id="story-character" aria-hidden="true">
-        <div class="story-character__figure">
-          <div class="story-character__head"></div>
-          <div class="story-character__body"></div>
-          <div class="story-character__sound" aria-hidden="true"></div>
-        </div>
-      </div>
-      <p class="story-modal__status" id="story-status">Loading story…</p>
-      <audio id="story-audio" class="story-modal__audio" controls></audio>
+  <!-- ── SCREEN 1: SPLASH ── -->
+  <div class="screen screen-splash" data-screen="splash">
+    <div class="splash-texture"></div>
+    <div class="splash-geo"></div>
+    <div class="splash-content">
+      <div class="aki-wordmark">Aki</div>
+      <div class="aki-subtitle">Ojibwe · Earth · Land</div>
+      <p class="splash-tagline">Your kitchen is a doorway back to the land.</p>
+      <button class="btn-primary" id="btn-start-scan">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+        What's in your kitchen?
+      </button>
+      <p class="btn-ghost" id="btn-explore-recipes">or explore recipes →</p>
     </div>
   </div>
 
-  <script src="js/utils.js"></script>
-  <script src="js/ar.js"></script>
-  <script src="js/render.js"></script>
-  <script src="js/generate3d.js"></script>
-  <script src="js/upload.js"></script>
-  <script src="js/story.js"></script>
+  <!-- ── SCREEN 2: NATION SELECTION ── -->
+  <div class="screen screen-nation" data-screen="nation">
+    <div class="screen-header">
+      <div class="step-label">Step 1 of 2</div>
+      <h2 class="screen-title">Which nation are you connected to?</h2>
+      <p class="screen-desc">This helps us share teachings and recipes from your specific land and community.</p>
+    </div>
+
+    <div class="nation-grid" id="nation-grid">
+      <div class="nation-card selected" data-nation="Anishinaabe" data-region="Great Lakes">
+        <div class="nation-card-dot"></div>
+        <div class="nation-card-name">Anishinaabe</div>
+        <div class="nation-card-region">Great Lakes</div>
+      </div>
+      <div class="nation-card" data-nation="Haudenosaunee" data-region="Northeast">
+        <div class="nation-card-dot"></div>
+        <div class="nation-card-name">Haudenosaunee</div>
+        <div class="nation-card-region">Northeast</div>
+      </div>
+      <div class="nation-card" data-nation="Cree" data-region="Northern Canada">
+        <div class="nation-card-dot"></div>
+        <div class="nation-card-name">Cree</div>
+        <div class="nation-card-region">Northern Canada</div>
+      </div>
+      <div class="nation-card" data-nation="Métis" data-region="Prairies">
+        <div class="nation-card-dot"></div>
+        <div class="nation-card-name">Métis</div>
+        <div class="nation-card-region">Prairies</div>
+      </div>
+      <div class="nation-card" data-nation="Coast Salish" data-region="Pacific Northwest">
+        <div class="nation-card-dot"></div>
+        <div class="nation-card-name">Coast Salish</div>
+        <div class="nation-card-region">Pacific Northwest</div>
+      </div>
+      <div class="nation-card" data-nation="Other" data-region="All territories">
+        <div class="nation-card-dot"></div>
+        <div class="nation-card-name">Other / All</div>
+        <div class="nation-card-region">All territories</div>
+      </div>
+    </div>
+
+    <button class="btn-primary" id="btn-nation-continue" style="width:100%; justify-content:center;">Continue</button>
+    <p class="skip-link" id="btn-nation-skip">I'm not sure yet — show me everything</p>
+  </div>
+
+  <!-- ── SCREEN 3: UPLOAD ── -->
+  <div class="screen screen-upload" data-screen="upload">
+    <div class="screen-header">
+      <div class="step-label">Step 2 of 2</div>
+      <h2 class="screen-title">What's in your kitchen?</h2>
+      <p class="screen-desc">Take a photo or upload an image of your ingredients and we'll find recipes for you.</p>
+    </div>
+
+    <div class="upload-zone" id="upload-zone">
+      <svg class="upload-icon" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <rect x="6" y="10" width="36" height="28" rx="3" stroke="#C8813A" stroke-width="2"/>
+        <circle cx="24" cy="24" r="7" stroke="#C8813A" stroke-width="2"/>
+        <path d="M18 10l2-4h8l2 4" stroke="#C8813A" stroke-width="2"/>
+      </svg>
+      <p class="upload-label">Photograph your ingredients</p>
+      <p class="upload-sub">Place ingredients on a flat surface<br>for best recognition</p>
+    </div>
+
+    <!-- Upload progress (hidden until upload starts) -->
+    <div class="aki-progress" id="upload-progress" style="display:none">
+      <div class="aki-progress__steps">
+        <div class="aki-progress__step aki-progress__step--active" id="pstep-1">
+          <div class="aki-progress__dot"><div class="spinner"></div></div>
+          <span>Uploading…</span>
+        </div>
+        <div class="aki-progress__step" id="pstep-2">
+          <div class="aki-progress__dot"><div class="spinner spinner--faint"></div></div>
+          <span>Analysing…</span>
+        </div>
+        <div class="aki-progress__step" id="pstep-3">
+          <div class="aki-progress__dot"><div class="spinner spinner--faint"></div></div>
+          <span>Finding recipes…</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="or-divider">or</div>
+    <button class="btn-secondary" id="btn-camera-roll">Upload from camera roll</button>
+
+    <div id="upload-error" class="aki-error" style="display:none" role="alert"></div>
+  </div>
+
+  <!-- ── SCREEN 4: DETECTION RESULT ── -->
+  <div class="screen screen-detect" data-screen="detect">
+    <div class="detect-image-area">
+      <!-- Actual uploaded image (swapped in after upload) -->
+      <img id="detect-img" src="" alt="" crossorigin="anonymous"
+        style="width:100%;height:100%;object-fit:cover;display:none">
+      <!-- Placeholder shown until we have the real image -->
+      <div class="detect-img-placeholder" id="detect-placeholder">🌿</div>
+      <div class="scan-line"></div>
+      <!-- Bounding box — positioned via JS based on actual bbox coords -->
+      <div class="bbox-overlay" id="bbox-overlay" style="display:none">
+        <div class="bbox-label" id="bbox-label">Ingredient · –%</div>
+      </div>
+    </div>
+
+    <div class="detect-panel">
+      <div class="detect-ingredient-name" id="detect-name">–</div>
+      <div class="detect-ojibwe-name" id="detect-ojibwe">–</div>
+
+      <div class="detect-tags" id="detect-tags">
+        <!-- Populated by render.js -->
+      </div>
+
+      <!-- Audio chip for Ojibwe pronunciation -->
+      <div class="audio-chip" id="audio-chip" style="display:none">
+        <div class="audio-play" id="audio-play-btn">
+          <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
+        </div>
+        <div class="audio-waveform" id="audio-waveform">
+          <div class="wave-bar" style="height:50%"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+          <div class="wave-bar"></div>
+        </div>
+        <div class="audio-label">Hear Ojibwe name</div>
+      </div>
+
+      <!-- Hidden audio element for TTS -->
+      <audio id="detect-audio" style="display:none"></audio>
+
+      <button class="btn-full" id="btn-find-recipes">Find recipes with this ingredient</button>
+      <button class="btn-full" id="btn-scan-more"
+        style="background: rgba(255,255,255,0.06); color: rgba(245,236,215,0.6);">
+        Scan more ingredients
+      </button>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 5: RECIPE CARD ── -->
+  <div class="screen screen-recipe" data-screen="recipe">
+    <div class="recipe-hero">
+      <div class="recipe-hero-geo"></div>
+      <div class="recipe-nation" id="recipe-nation">–</div>
+      <div class="recipe-title-ojibwe" id="recipe-title-ojibwe">–</div>
+      <div class="recipe-title-english" id="recipe-title-english">–</div>
+      <div class="recipe-meta">
+        <div class="recipe-meta-item">
+          <span class="recipe-meta-val" id="recipe-time">–</span>
+          <span class="recipe-meta-key">Minutes</span>
+        </div>
+        <div class="recipe-meta-item">
+          <span class="recipe-meta-val" id="recipe-serves">–</span>
+          <span class="recipe-meta-key">Servings</span>
+        </div>
+        <div class="recipe-meta-item">
+          <span class="recipe-meta-val" id="recipe-difficulty">–</span>
+          <span class="recipe-meta-key">Difficulty</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="recipe-body">
+      <!-- Suggested recipes list if multiple -->
+      <div id="recipe-suggestions-wrap" style="display:none">
+        <div class="recipe-section-label">More recipes you can make</div>
+        <div id="recipe-suggestions-list" class="aki-recipe-suggestions"></div>
+      </div>
+
+      <div class="recipe-section-label">Ingredients — tap to hear Ojibwe name</div>
+      <div class="ingredient-list" id="recipe-ingredients">
+        <!-- Populated by render.js -->
+      </div>
+
+      <div class="recipe-section-label">Steps</div>
+      <div class="step-list" id="recipe-steps">
+        <!-- Populated by render.js -->
+      </div>
+
+      <!-- Cultural knowledge summary -->
+      <div id="recipe-cultural-wrap" style="display:none">
+        <div class="recipe-section-label">Cultural knowledge</div>
+        <p id="recipe-cultural-text"></p>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 6: AR VIEW ── -->
+  <div class="screen screen-ar" data-screen="ar">
+    <!-- Three.js canvas is appended here by CookingAR.mount() -->
+    <div class="ar-viewport" id="ar-viewport">
+      <div class="ar-grid"></div>
+      <div class="ar-ingredient-hint" id="ar-ingredient-hint">🌿</div>
+      <!-- Storyboard overlay injected by ar.js -->
+    </div>
+
+    <div class="ar-corner ar-corner-tl"></div>
+    <div class="ar-corner ar-corner-tr"></div>
+    <div class="ar-corner ar-corner-bl"></div>
+    <div class="ar-corner ar-corner-br"></div>
+
+    <div class="ar-panel">
+      <div class="ar-card">
+        <div class="ar-step-label" id="ar-step-label">Loading 3D view…</div>
+        <div class="ar-step-text" id="ar-step-text">Generating depth mesh from your photo.</div>
+        <div class="ar-progress" id="ar-progress-dots">
+          <div class="ar-prog-dot active"></div>
+          <div class="ar-prog-dot"></div>
+          <div class="ar-prog-dot"></div>
+          <div class="ar-prog-dot"></div>
+        </div>
+      </div>
+      <div class="ar-controls">
+        <button class="ar-btn ar-btn-prev" id="ar-btn-back">← Back</button>
+        <button class="ar-btn ar-btn-next" id="ar-btn-story">View story →</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── SCREEN 7: CULTURAL STORY ── -->
+  <div class="screen screen-story" data-screen="story">
+    <div class="story-ornament"></div>
+    <div class="story-eyebrow" id="story-eyebrow">The teaching behind the recipe</div>
+    <h2 class="story-title" id="story-title">–</h2>
+    <p class="story-body" id="story-body">–</p>
+
+    <!-- TTS audio chip -->
+    <div class="audio-chip" id="story-audio-chip" style="display:none; margin-bottom:28px;">
+      <div class="audio-play" id="story-play-btn">
+        <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
+      </div>
+      <div class="audio-waveform">
+        <div class="wave-bar" style="height:50%"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+        <div class="wave-bar"></div>
+      </div>
+      <div class="audio-label">Hear this story</div>
+    </div>
+    <audio id="story-audio" style="display:none"></audio>
+
+    <div class="story-attribution">
+      <div class="story-attr-label">Shared by</div>
+      <div class="story-attr-name" id="story-attr-name">–</div>
+    </div>
+    <p class="story-land" id="story-land"></p>
+  </div>
+
+  <!-- ── SCREEN 8: WORD OF THE DAY ── -->
+  <div class="screen screen-word" data-screen="word">
+    <div class="word-day-label">Word of the day</div>
+    <div class="word-ojibwe" id="word-ojibwe">–</div>
+    <div class="word-english" id="word-english">–</div>
+    <div class="word-image">
+      <div class="word-image-geo"></div>
+      <span id="word-emoji">🌿</span>
+    </div>
+    <div class="word-play" id="word-play" style="display:none">
+      <div class="word-play-btn" id="word-play-btn">
+        <svg viewBox="0 0 10 12"><path d="M0 0l10 6-10 6V0z"/></svg>
+      </div>
+      <div class="word-play-text">Hear Elder pronunciation in Ojibwe</div>
+    </div>
+    <audio id="word-audio" style="display:none"></audio>
+
+    <!-- Suggestions chip -->
+    <div style="margin-top:40px;">
+      <button class="btn-primary" id="btn-word-scan" style="width:100%;justify-content:center;">
+        Scan something from your kitchen
+      </button>
+    </div>
+  </div>
+
+  <!-- ── BOTTOM NAV ── -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <div class="nav-item active" data-nav="upload" id="nav-home">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+      <span class="nav-label">Scan</span>
+    </div>
+    <div class="nav-item" data-nav="recipe" id="nav-recipes">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg>
+      <span class="nav-label">Recipes</span>
+    </div>
+    <div class="nav-item" data-nav="story" id="nav-story">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      <span class="nav-label">Stories</span>
+    </div>
+    <div class="nav-item" data-nav="word" id="nav-word">
+      <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 2a10 10 0 1 0 0 20A10 10 0 0 0 12 2z"/><path d="M12 8v4l3 3"/></svg>
+      <span class="nav-label">Word</span>
+    </div>
+  </nav>
+
+</div><!-- /.screens -->
+
+<!-- Scripts -->
+<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
+<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
+<script src="js/utils.js"></script>
+<script src="js/ar.js"></script>
+<script src="js/app.js"></script>
+<script src="js/upload.js"></script>
+<script src="js/render.js"></script>
+<script src="js/generate3d.js"></script>
+<script src="js/story.js"></script>
 </body>
 </html>
