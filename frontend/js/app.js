@@ -18,10 +18,10 @@ const AkiApp = (() => {
   };
 
   // ── Screen map ─────────────────────────────────────────────────────────────
-  const SCREENS = ['splash','upload','detect','recipe','kitchen3d','story','word','ar'];
+  const SCREENS = ['splash','upload','detect','recipe','kitchen3d','story','ar'];
 
   // Screens that show the bottom nav
-  const NAV_SCREENS = new Set(['upload','detect','recipe','story','word']);
+  const NAV_SCREENS = new Set(['upload','detect','recipe','story']);
 
   // ── Navigate ───────────────────────────────────────────────────────────────
   function goTo(screenName) {
@@ -173,11 +173,6 @@ const AkiApp = (() => {
       goTo('upload');
     });
 
-    // ── Word screen ──────────────────────────────────────────────────────────
-    $('btn-word-scan')?.addEventListener('click', () => {
-      if (window.CookingAR) CookingAR.unmount();
-      goTo('upload');
-    });
 
     // ── AR (kept for bottom-nav / legacy) ────────────────────────────────────
     $('ar-btn-back')?.addEventListener('click', () => {
@@ -223,11 +218,6 @@ const AkiApp = (() => {
       if (body) speakText(body, $('story-audio'));
     });
 
-    // Word screen
-    $('word-play-btn')?.addEventListener('click', () => {
-      const word = $('word-ojibwe')?.textContent?.trim();
-      if (word && word !== '–') speakText(word, $('word-audio'));
-    });
   }
 
   // ── Ingredient row click: hear Ojibwe name ─────────────────────────────────
