@@ -40,6 +40,13 @@ const CookingGuide = (() => {
   let _stirAngle    = 0;
   let _chopWaiting  = false;  // true = waiting for user to click Start Cutting
 
+  // Completion scene
+  let _soupMesh        = null;
+  let _smokePoints     = null;
+  let _smokePosAttr    = null;
+  let _smokeVelocities = null;
+  const _SMOKE_COUNT   = 70;
+
   // Ingredient lerp system (move to board / return)
   let _activeLerps   = [];   // [{ mesh, from, to, t, duration }]
   let _origPositions = {};   // { slotName: {x,y,z} }
@@ -1050,6 +1057,108 @@ const CookingGuide = (() => {
     else { card.classList.add('cg-out'); setTimeout(() => _applyStep(idx), 155); }
   }
 
+  // ── Final dish: load vegetable_soup.glb + fade out ingredients ────────────
+  function _loadFinalDish() {
+    // Fade out all ingredient meshes
+    if (_meshes) {
+      _meshes.forEach(m => {
+        m.traverse(c => {
+          if (c.material) {
+            c.material = c.material.clone();
+            c.material.transparent = true;
+          }
+        });
+        let fade = 1;
+        const fadeOut = () => {
+          fade -= 0.04;
+          m.traverse(c => { if (c.material) c.material.opacity = Math.max(0, fade); });
+          if (fade > 0) requestAnimationFrame(fadeOut);
+          else m.visible = false;
+        };
+        fadeOut();
+      });
+    }
+
+    // Load the soup model
+    const soupLoader = new THREE.GLTFLoader();
+    soupLoader.load(
+      '/assets/3d/vegetable_soup.glb',
+      (gltf) => {
+        const soup = gltf.scene;
+        soup.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
+
+        // Scale to a reasonable counter size
+        const box    = new THREE.Box3().setFromObject(soup);
+        const size   = box.getSize(new THREE.Vector3());
+        const maxDim = Math.max(size.x, size.y, size.z);
+        const scale  = 0.55 / maxDim;
+        soup.scale.setScalar(0); // start invisible, grow in
+
+        // Centre on cutting board
+        box.setFromObject(soup);
+        const centre = box.getCenter(new THREE.Vector3());
+        soup.position.set(
+          BOARD_CENTER.x - centre.x * scale,
+          BOARD_Y       + 0.02,
+          BOARD_CENTER.z - centre.z * scale
+        );
+
+        _scene.add(soup);
+        _soupMesh = soup;
+
+        // Grow the soup in over ~0.8s
+        let t = 0;
+        const targetScale = scale;
+        const grow = () => {
+          t = Math.min(t + 0.03, 1);
+          const ease = 1 - Math.pow(1 - t, 3); // ease-out cubic
+          soup.scale.setScalar(targetScale * ease);
+          if (t < 1) requestAnimationFrame(grow);
+        };
+        grow();
+      },
+      undefined,
+      (err) => console.warn('[CookingGuide] vegetable_soup.glb failed:', err)
+    );
+  }
+
+  // ── Steam / smoke particle effect ─────────────────────────────────────────
+  function _startSmokeEffect() {
+    const positions  = new Float32Array(_SMOKE_COUNT * 3);
+    const velocities = [];
+
+    for (let i = 0; i < _SMOKE_COUNT; i++) {
+      const spread = 0.22;
+      positions[i * 3]     = BOARD_CENTER.x + (Math.random() - 0.5) * spread;
+      positions[i * 3 + 1] = BOARD_Y        + 0.12 + Math.random() * 0.6;
+      positions[i * 3 + 2] = BOARD_CENTER.z + (Math.random() - 0.5) * spread;
+      velocities.push({
+        x:    (Math.random() - 0.5) * 0.0025,
+        y:    0.004  + Math.random() * 0.004,
+        z:    (Math.random() - 0.5) * 0.0025,
+        life: Math.random(), // stagger start
+      });
+    }
+
+    const geo     = new THREE.BufferGeometry();
+    const posAttr = new THREE.BufferAttribute(positions, 3);
+    geo.setAttribute('position', posAttr);
+
+    const mat = new THREE.PointsMaterial({
+      color:        0xEEDDCC,
+      size:         0.09,
+      sizeAttenuation: true,
+      transparent:  true,
+      opacity:      0.30,
+      depthWrite:   false,
+    });
+
+    _smokePoints     = new THREE.Points(geo, mat);
+    _smokePosAttr    = posAttr;
+    _smokeVelocities = velocities;
+    _scene.add(_smokePoints);
+  }
+
   function _renderCompletion() {
     _clearLights();
     _setAllOpacity(1);
@@ -1057,6 +1166,10 @@ const CookingGuide = (() => {
     _setAnimType('none', null);
     _chimeFinale();
     if (_spotGlow) _spotGlow.children.forEach(c => { if (c.material) c.material.opacity = 0; });
+
+    // Load the finished soup and start smoke effect
+    _loadFinalDish();
+    _startSmokeEffect();
 
     const card = _q('#cg-card'); if (!card) return;
     card.classList.add('cg-out');
@@ -1137,6 +1250,39 @@ const CookingGuide = (() => {
         case 'chop':    _tickChop(dt); break;
         case 'stir':    if (base) _tickStir(dt, base); break;
         default:        if (base) _tickAllParticles(dt, base, now); break;
+      }
+    }
+
+    // ── Smoke / steam particle animation ──────────────────────────────────
+    if (_smokePosAttr && _smokeVelocities) {
+      const pos     = _smokePosAttr.array;
+      const maxH    = BOARD_Y + 1.6;
+      const spread  = 0.22;
+      for (let i = 0; i < _SMOKE_COUNT; i++) {
+        const j = i * 3;
+        const v = _smokeVelocities[i];
+        pos[j]   += v.x;
+        pos[j+1] += v.y;
+        pos[j+2] += v.z;
+        v.life   += dt * 0.55;
+        // Drift & waver
+        v.x = (Math.random() - 0.5) * 0.0015;
+        v.z = (Math.random() - 0.5) * 0.0015;
+        // Reset particle when it floats out of range
+        if (pos[j+1] > maxH || v.life > 1) {
+          pos[j]   = BOARD_CENTER.x + (Math.random() - 0.5) * spread;
+          pos[j+1] = BOARD_Y + 0.1 + Math.random() * 0.15;
+          pos[j+2] = BOARD_CENTER.z + (Math.random() - 0.5) * spread;
+          v.x = (Math.random() - 0.5) * 0.0025;
+          v.y = 0.004 + Math.random() * 0.004;
+          v.z = (Math.random() - 0.5) * 0.0025;
+          v.life = 0;
+        }
+      }
+      _smokePosAttr.needsUpdate = true;
+      // Gently pulse opacity
+      if (_smokePoints) {
+        _smokePoints.material.opacity = 0.22 + 0.12 * Math.sin(t * 1.4);
       }
     }
 
@@ -1231,6 +1377,11 @@ const CookingGuide = (() => {
       });
     });
     _cuttingBoard = _knifeGroup = _spoonGroup = _spotGlow = _dicedOnionsMesh = null;
+
+    // Clean up soup & smoke
+    if (_soupMesh)    { _scene && _scene.remove(_soupMesh);    _soupMesh    = null; }
+    if (_smokePoints) { _scene && _scene.remove(_smokePoints); _smokePoints = null; }
+    _smokePosAttr = null; _smokeVelocities = null;
 
     if (_audioCtx) { try { _audioCtx.close(); } catch (_) {} _audioCtx = null; }
     _scene = _camera = _renderer = _meshes = null;

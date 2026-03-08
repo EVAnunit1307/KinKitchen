@@ -276,5 +276,17 @@ const AkiApp = (() => {
 
   document.addEventListener('DOMContentLoaded', init);
 
+  // CookingGuide fires this when user clicks "Hear the story" on the completion card
+  window.addEventListener('cookingguide:story', () => {
+    if (window.CookingGuide) CookingGuide.destroy();
+    goTo('story');
+  });
+
+  // Also support the direct function call path
+  window.launchElderStory = () => {
+    if (window.CookingGuide) CookingGuide.destroy();
+    goTo('story');
+  };
+
   return { goTo, state, speakText };
 })();
