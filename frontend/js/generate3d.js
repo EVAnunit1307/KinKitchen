@@ -5,17 +5,13 @@ const ASSETS_PATH = '/assets/3d';
 const CAMERA_STORAGE_KEY = 'kitchen3d_camera';
 const loader = new THREE.GLTFLoader();
 
-let scene, camera, renderer, orbitControls, transformControls;
+let scene, camera, renderer, orbitControls;
 let ingredientMeshes = [];
-let selectedObject = null;
-let positionPanel = null;
 let animationFrameId = null;
 let isXRActive = false;
 let xrSession = null;
 let kitchenPublicId = null;
 let kitchenIngredientLabelEl = null;
-let kitchenMoveMode = false;
-let kitchenSelectedForMove = null;
 
 function initScene(container) {
   scene = new THREE.Scene();
@@ -79,19 +75,6 @@ function initScene(container) {
   orbitControls.enableDamping = true;
   orbitControls.target.set(0.1169, 3.2055, 0.7738);
 
-  transformControls = new THREE.TransformControls(camera, renderer.domElement);
-  transformControls.addEventListener('dragging-changed', (event) => {
-    orbitControls.enabled = !event.value;
-  });
-  // Force uniform scaling — drag X axis, Y and Z follow
-  transformControls.addEventListener('objectChange', () => {
-    if (transformControls.mode === 'scale' && transformControls.object) {
-      var s = transformControls.object.scale;
-      s.set(s.x, s.x, s.x);
-    }
-  });
-  scene.add(transformControls);
-
   // Click to select
   const raycaster = new THREE.Raycaster();
   const mouse = new THREE.Vector2();
@@ -112,7 +95,7 @@ function initScene(container) {
       var name = target.userData.slotName || target.userData.ingredientName;
       var displayName = name ? (typeof formatIngredientLabel === 'function' ? formatIngredientLabel(name) : name.replace(/_/g, ' ')) : '';
 
-      // Always show ingredient name in overlay (label)
+      // Show ingredient name in overlay (label)
       if (kitchenIngredientLabelEl) {
         kitchenIngredientLabelEl.textContent = displayName ? displayName : '';
         kitchenIngredientLabelEl.style.display = displayName ? 'block' : 'none';
@@ -122,33 +105,13 @@ function initScene(container) {
       if (kitchenPublicId && name && typeof showIngredientLabel === 'function') {
         showIngredientLabel(kitchenPublicId, displayName || name);
       }
-
-      // Remember for Move mode; only show gizmo when Move is on
-      kitchenSelectedForMove = target;
-      if (kitchenMoveMode) {
-        selectedObject = target;
-        transformControls.attach(target);
-      } else {
-        selectedObject = null;
-        transformControls.detach();
-      }
     } else {
       if (kitchenIngredientLabelEl) kitchenIngredientLabelEl.style.display = 'none';
-      deselectObject();
     }
   });
 
   // Lock camera by default
   orbitControls.enabled = false;
-
-  // Keyboard: toggle transform mode
-  window.addEventListener('keydown', (e) => {
-    if (!selectedObject) return;
-    if (e.key === 'g') transformControls.setMode('translate');
-    if (e.key === 'r') transformControls.setMode('rotate');
-    if (e.key === 's') transformControls.setMode('scale');
-    if (e.key === 'Escape') deselectObject();
-  });
 
   // Resize
   window.addEventListener('resize', () => {
@@ -162,44 +125,11 @@ function initScene(container) {
     animationFrameId = requestAnimationFrame(animate);
     if (isXRActive) return;
     orbitControls.update();
-    updatePositionPanel();
     renderer.render(scene, camera);
   }
   animate();
 }
 
-var _panelLastUpdate = 0;
-function updatePositionPanel() {
-  if (!positionPanel) return;
-  // Throttle to ~5 fps to avoid DOM thrash
-  var now = performance.now();
-  if (now - _panelLastUpdate < 200) return;
-  _panelLastUpdate = now;
-  var lines = ingredientMeshes.map(function (mesh) {
-    var label = mesh.userData.slotName || mesh.userData.ingredientName || '?';
-    var p = mesh.position;
-    var r = mesh.rotation;
-    var s = mesh.scale.x;
-    return label + ':  pos(' + p.x.toFixed(4) + ', ' + p.y.toFixed(4) + ', ' + p.z.toFixed(4) + ')' +
-      '  rot(' + r.x.toFixed(4) + ', ' + r.y.toFixed(4) + ', ' + r.z.toFixed(4) + ')' +
-      '  scale(' + s.toFixed(4) + ')';
-  });
-  positionPanel.textContent = lines.join('\n');
-}
-
-function selectObject(obj) {
-  if (selectedObject === obj) return;
-  deselectObject();
-  selectedObject = obj;
-  kitchenSelectedForMove = obj;
-  if (kitchenMoveMode) transformControls.attach(obj);
-}
-
-function deselectObject() {
-  selectedObject = null;
-  kitchenSelectedForMove = null;
-  transformControls.detach();
-}
 
 function onXRSessionEnded() {
   isXRActive = false;
@@ -373,8 +303,6 @@ function resetCameraState() {
 
 async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
   kitchenPublicId = publicId || null;
-  kitchenMoveMode = false;
-  kitchenSelectedForMove = null;
   // Use overlay for status messages, container for the 3D canvas
   var overlay = document.getElementById('kitchen3d-overlay');
   if (overlay) overlay.innerHTML = '<p style="color:var(--cream);font-size:14px;">Loading 3D scene...</p>';
@@ -397,7 +325,6 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
     // Clear previous scene
     container.innerHTML = '';
     ingredientMeshes = [];
-    selectedObject = null;
 
     // Init Three.js scene
     initScene(container);
@@ -439,155 +366,51 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
     orbitControls.target.set(0.1169, 3.2055, 0.7738);
     orbitControls.update();
 
-    // Launch CookingGuide overlay now that all meshes are in the scene
+    // Populate sidebar recipe info
+    const activeRec = window.AkiApp && window.AkiApp.state && window.AkiApp.state.activeRecipe && window.AkiApp.state.activeRecipe.recipe;
+    const nationEl = document.getElementById('k3d-nation');
+    const titleEl  = document.getElementById('k3d-title');
+    const descEl   = document.getElementById('k3d-desc');
+    if (activeRec) {
+      if (nationEl) nationEl.textContent = activeRec.culture || '';
+      if (titleEl)  titleEl.textContent  = activeRec.name    || 'Three Sisters Stew';
+      if (descEl)   descEl.textContent   = activeRec.description || '';
+    } else {
+      if (titleEl) titleEl.textContent = 'Three Sisters Stew';
+    }
+
+    // Wire the pre-built XR button in the sidebar
+    const xrBtn = document.getElementById('btn-enter-xr');
+    if (xrBtn) {
+      xrBtn.onclick = function() { launchWebXR(); };
+      if (navigator.xr) {
+        Promise.all([
+          navigator.xr.isSessionSupported('immersive-vr').catch(function() { return false; }),
+          navigator.xr.isSessionSupported('immersive-ar').catch(function() { return false; }),
+        ]).then(function(results) {
+          var vr = results[0], ar = results[1];
+          if (vr)      xrBtn.innerHTML = '🥽 Enter VR';
+          else if (ar) xrBtn.innerHTML = '🥽 Enter AR';
+          else         xrBtn.innerHTML = '🥽 Fullscreen';
+        });
+      } else {
+        xrBtn.innerHTML = '🥽 Fullscreen';
+      }
+    }
+
+    // Point ingredient label at the sidebar element
+    kitchenIngredientLabelEl = document.getElementById('kitchen3d-ingredient-label');
+
+    // Clear the canvas overlay (no longer used for controls)
+    if (overlay) { overlay.innerHTML = ''; overlay.style.pointerEvents = 'none'; }
+
+    // Launch CookingGuide into the sidebar instructions panel
     if (window.CookingGuide) {
       CookingGuide.init(scene, camera, renderer, ingredientMeshes);
     }
 
-    // Update overlay with controls
-    if (overlay) {
-      overlay.innerHTML = '';
-      overlay.style.pointerEvents = 'auto';
-
-      // Status text
-      const status = document.createElement('p');
-      status.style.cssText = 'color:var(--cream);font-size:13px;margin-bottom:8px;';
-      status.innerHTML = '<strong>3D Kitchen</strong> — ' + ingredients.length + ' ingredients';
-      overlay.appendChild(status);
-
-      const hint = document.createElement('p');
-      hint.style.cssText = 'color:var(--cream);opacity:0.5;font-size:11px;margin-bottom:8px;';
-      hint.textContent = 'Click an ingredient to see its name and Cloudinary labeled photo.';
-      overlay.appendChild(hint);
-
-      // Ingredient name label (shown when you click an object)
-      const labelWrap = document.createElement('div');
-      labelWrap.style.cssText = 'margin-bottom:12px;min-height:28px;';
-      kitchenIngredientLabelEl = document.createElement('span');
-      kitchenIngredientLabelEl.className = 'kitchen3d-ingredient-label';
-      kitchenIngredientLabelEl.style.cssText = 'display:none;padding:8px 14px;border-radius:8px;background:rgba(200,129,58,0.25);color:var(--cream);font-size:14px;font-weight:600;border:1px solid rgba(200,129,58,0.5);';
-      labelWrap.appendChild(kitchenIngredientLabelEl);
-      overlay.appendChild(labelWrap);
-
-      // Button row
-      const btnRow = document.createElement('div');
-      btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
-
-      // Launch in WebXR — pulsing ring wrapper + smart capability label
-      const xrWrap = document.createElement('div');
-      xrWrap.className = 'xr-btn-wrap';
-      xrWrap.innerHTML = `
-        <svg class="xr-pulse-ring" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="30" cy="30" r="26" fill="none" stroke="#C8813A" stroke-width="2"
-            stroke-dasharray="163" stroke-dashoffset="0" opacity="0.6">
-            <animate attributeName="stroke-dashoffset" values="163;0;163" dur="2.4s" repeatCount="indefinite"/>
-            <animate attributeName="opacity" values="0.6;0.15;0.6" dur="2.4s" repeatCount="indefinite"/>
-          </circle>
-        </svg>`;
-      const xrBtn = document.createElement('button');
-      xrBtn.id = 'btn-enter-xr';
-      xrBtn.innerHTML = '🥽 Immersive View';
-      xrBtn.className = 'kitchen3d-btn kitchen3d-btn--xr';
-      xrBtn.addEventListener('click', () => launchWebXR());
-      xrWrap.appendChild(xrBtn);
-      btnRow.appendChild(xrWrap);
-
-      // Detect WebXR capability and update button label accordingly
-      if (navigator.xr) {
-        Promise.all([
-          navigator.xr.isSessionSupported('immersive-vr').catch(() => false),
-          navigator.xr.isSessionSupported('immersive-ar').catch(() => false),
-        ]).then(([vr, ar]) => {
-          if (vr)      xrBtn.innerHTML = '🥽 Enter VR (WebXR)';
-          else if (ar) xrBtn.innerHTML = '🥽 Enter AR (WebXR)';
-          else         xrBtn.innerHTML = '🥽 Immersive Fullscreen';
-        });
-      } else {
-        xrBtn.innerHTML = '🥽 Immersive Fullscreen';
-      }
-
-      // Unlock Camera
-      const camBtn = document.createElement('button');
-      camBtn.textContent = 'Unlock Camera';
-      camBtn.className = 'kitchen3d-btn';
-      camBtn.addEventListener('click', () => {
-        orbitControls.enabled = !orbitControls.enabled;
-        camBtn.textContent = orbitControls.enabled ? 'Lock Camera' : 'Unlock Camera';
-      });
-      btnRow.appendChild(camBtn);
-
-      // Move mode (enables transform gizmo; click ingredient first to select)
-      const moveBtn = document.createElement('button');
-      moveBtn.textContent = 'Move';
-      moveBtn.className = 'kitchen3d-btn';
-      moveBtn.addEventListener('click', () => {
-        kitchenMoveMode = !kitchenMoveMode;
-        moveBtn.classList.toggle('kitchen3d-btn--active', kitchenMoveMode);
-        if (kitchenMoveMode && kitchenSelectedForMove) {
-          transformControls.attach(kitchenSelectedForMove);
-          selectedObject = kitchenSelectedForMove;
-        } else if (!kitchenMoveMode) {
-          transformControls.detach();
-          selectedObject = null;
-          kitchenSelectedForMove = null;
-        }
-        if (kitchenMoveMode) {
-          transformControls.setMode('translate');
-          rotBtn.classList.remove('kitchen3d-btn--active');
-          scaleBtn.classList.remove('kitchen3d-btn--active');
-        }
-      });
-      btnRow.appendChild(moveBtn);
-
-      // Rotate mode
-      const rotBtn = document.createElement('button');
-      rotBtn.textContent = 'Rotate';
-      rotBtn.className = 'kitchen3d-btn';
-      rotBtn.addEventListener('click', () => {
-        kitchenMoveMode = true;
-        moveBtn.classList.add('kitchen3d-btn--active');
-        rotBtn.classList.add('kitchen3d-btn--active');
-        scaleBtn.classList.remove('kitchen3d-btn--active');
-        if (kitchenSelectedForMove) {
-          transformControls.attach(kitchenSelectedForMove);
-          selectedObject = kitchenSelectedForMove;
-        }
-        transformControls.setMode('rotate');
-      });
-      btnRow.appendChild(rotBtn);
-
-      // Scale mode
-      const scaleBtn = document.createElement('button');
-      scaleBtn.textContent = 'Scale';
-      scaleBtn.className = 'kitchen3d-btn';
-      scaleBtn.addEventListener('click', () => {
-        kitchenMoveMode = true;
-        moveBtn.classList.add('kitchen3d-btn--active');
-        scaleBtn.classList.add('kitchen3d-btn--active');
-        rotBtn.classList.remove('kitchen3d-btn--active');
-        if (kitchenSelectedForMove) {
-          transformControls.attach(kitchenSelectedForMove);
-          selectedObject = kitchenSelectedForMove;
-        }
-        transformControls.setMode('scale');
-      });
-      btnRow.appendChild(scaleBtn);
-
-      overlay.appendChild(btnRow);
-
-      // Live position panel
-      positionPanel = document.createElement('pre');
-      positionPanel.style.cssText =
-        'margin-top:12px;padding:8px 10px;background:rgba(0,0,0,0.55);color:#0f0;' +
-        'font-family:monospace;font-size:11px;border-radius:6px;max-height:160px;' +
-        'overflow-y:auto;white-space:pre;line-height:1.5;';
-      overlay.appendChild(positionPanel);
-      updatePositionPanel();
-    }
-
-    // Enable orbit + set default transform mode
+    // Camera locked by default; only unlocked in immersive/fullscreen mode
     orbitControls.enabled = false;
-    transformControls.setMode('translate');
   } catch (err) {
     if (overlay) overlay.innerHTML = '<p style="color:#e55;">' + escapeHtml(err.message) + '</p>';
   }

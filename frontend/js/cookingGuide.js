@@ -231,71 +231,82 @@ const CookingGuide = (() => {
   const _CSS = `
 @import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&family=DM+Sans:ital,wght@0,400;0,500;0,600;1,400&display=swap');
 #cg-card {
-  position:fixed; bottom:24px; right:20px; width:292px;
-  background:#FEFBF5; border-radius:16px; overflow:hidden;
-  box-shadow:0 20px 60px rgba(0,0,0,.48),0 0 0 1px rgba(180,110,40,.28);
+  position:relative; width:100%;
+  background:transparent;
+  border-radius:0; overflow:hidden;
+  box-shadow:none;
   font-family:'DM Sans',system-ui,sans-serif;
   transition:opacity .15s ease,transform .15s ease;
   pointer-events:auto;
 }
-#cg-card.cg-out  { opacity:0; transform:translateY(6px) scale(.975); }
-#cg-card.cg-done { background:#0F2018; }
+#cg-card.cg-out  { opacity:0; transform:translateY(8px) scale(.98); }
+#cg-card.cg-done { background:rgba(15,32,24,0.55); }
 .cg-hero {
-  position:relative; padding:14px 16px 12px;
-  display:flex; align-items:center; gap:12px; min-height:70px;
+  position:relative; padding:14px 20px 12px;
+  display:flex; align-items:center; gap:12px; min-height:60px;
+  border-bottom:1px solid rgba(200,129,58,0.14);
 }
 .cg-hero::after {
   content:''; position:absolute; inset:0;
-  background:linear-gradient(135deg,rgba(255,255,255,.10) 0%,transparent 55%);
+  background:linear-gradient(135deg,rgba(200,129,58,.07) 0%,transparent 55%);
   pointer-events:none;
 }
-.cg-hero-icon { font-size:32px; line-height:1; flex-shrink:0; filter:drop-shadow(0 2px 5px rgba(0,0,0,.35)); }
+.cg-hero-icon { display:none; }
 .cg-hero-mid  { flex:1; min-width:0; }
-.cg-hero-verb { font-size:9px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:rgba(255,255,255,.55); margin-bottom:2px; }
-.cg-hero-ings { font-size:24px; line-height:1; letter-spacing:.05em; }
-.cg-hero-num  { font-family:'DM Sans',sans-serif; font-size:34px; font-weight:600; color:rgba(255,255,255,.20); line-height:1; flex-shrink:0; letter-spacing:-.03em; }
-.cg-prog-wrap { height:3px; background:rgba(0,0,0,.07); }
-.cg-prog-fill { height:100%; background:#C8813A; transition:width .5s cubic-bezier(.4,0,.2,1); }
-.cg-content   { padding:13px 15px 11px; }
-.cg-phase     { font-size:9.5px; font-weight:700; letter-spacing:.10em; text-transform:uppercase; color:#C8813A; margin-bottom:4px; }
-.cg-title-row  { display:flex; align-items:center; gap:10px; margin-bottom:8px; flex-wrap:wrap; }
-.cg-title      { font-family:'Playfair Display',serif; font-size:21px; font-weight:700; color:#1A0E04; line-height:1.2; flex:1; min-width:0; }
-.cg-btn-listen, .cg-btn-voice { flex-shrink:0; font-size:11px; padding:6px 10px; border-radius:8px; border:1px solid rgba(74,53,32,.25); background:#FEFBF5; color:#5C2A0E; cursor:pointer; font-family:inherit; }
-.cg-btn-listen:hover, .cg-btn-voice:hover { background:#F5EDE0; }
+.cg-hero-verb { font-size:9px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:rgba(200,129,58,.65); margin-bottom:2px; }
+.cg-hero-ings { font-size:18px; line-height:1; letter-spacing:.03em; color:rgba(245,236,215,.90); }
+.cg-hero-num  { font-family:'DM Sans',sans-serif; font-size:44px; font-weight:700; color:rgba(200,129,58,.45); line-height:1; flex-shrink:0; letter-spacing:-.04em; }
+.cg-prog-wrap { height:2px; background:rgba(200,129,58,.10); }
+.cg-prog-fill { height:100%; background:linear-gradient(90deg,#C8813A,#F5B04A); transition:width .5s cubic-bezier(.4,0,.2,1); }
+.cg-content   { padding:14px 20px 12px; }
+.cg-phase     { font-size:9px; font-weight:700; letter-spacing:.13em; text-transform:uppercase; color:rgba(200,129,58,.70); margin-bottom:5px; }
+.cg-title-row  { display:flex; align-items:flex-start; gap:8px; margin-bottom:9px; flex-wrap:wrap; }
+.cg-title      { font-family:'Playfair Display',serif; font-size:19px; font-weight:700; color:rgba(245,236,215,.95); line-height:1.25; flex:1; min-width:0; }
+.cg-btn-listen, .cg-btn-voice {
+  flex-shrink:0; font-size:10px; font-weight:600; letter-spacing:.04em;
+  padding:5px 10px; border-radius:6px;
+  border:1px solid rgba(200,129,58,.28);
+  background:rgba(200,129,58,.08);
+  color:rgba(200,129,58,.85);
+  cursor:pointer; font-family:inherit;
+  transition:background .12s,border-color .12s;
+}
+.cg-btn-listen:hover, .cg-btn-voice:hover { background:rgba(200,129,58,.18); border-color:rgba(200,129,58,.50); }
 .cg-btn-voice.cg-btn-voice--listening { background:#C8813A; color:#FFF8EE; border-color:#C8813A; animation:cg-pulse 1s ease-in-out infinite; }
 @keyframes cg-pulse { 50% { opacity:.85; } }
-.cg-body-text { font-size:12.5px; line-height:1.65; color:#4A3520; margin-bottom:7px; }
-.cg-tip       { font-size:11.5px; line-height:1.55; color:#7A5530; font-style:italic;
-                 border-left:2.5px solid #C8813A; padding-left:9px; margin-bottom:11px; }
-.cg-btns { display:flex; gap:8px; justify-content:flex-end; }
+.cg-body-text { font-size:13px; line-height:1.65; color:rgba(245,236,215,.85); margin-bottom:9px; }
+.cg-tip       { font-size:11.5px; line-height:1.55; color:rgba(200,129,58,.78); font-style:italic;
+                 border-left:2px solid rgba(200,129,58,.38); padding-left:10px; margin-bottom:13px; }
+.cg-btns { display:flex; gap:8px; justify-content:flex-end; padding-bottom:2px; }
 .cg-btn  {
-  font-family:'DM Sans',sans-serif; font-size:13px; font-weight:600;
-  padding:8px 16px; border-radius:9px; border:none; cursor:pointer;
+  font-family:'DM Sans',sans-serif; font-size:12px; font-weight:600; letter-spacing:.03em;
+  padding:9px 18px; border-radius:8px; border:none; cursor:pointer;
   transition:background .12s,transform .1s,box-shadow .12s;
 }
 .cg-btn:active { transform:scale(.93); }
-.cg-btn-back { background:transparent; color:#C8813A; border:1.5px solid #C8813A; }
-.cg-btn-next { background:#C8813A; color:#FFF8EE; box-shadow:0 2px 8px rgba(200,129,58,.38); }
-.cg-btn-back:hover { background:rgba(200,129,58,.1); }
+.cg-btn-back { background:transparent; color:rgba(200,129,58,.80); border:1px solid rgba(200,129,58,.30); }
+.cg-btn-next { background:#C8813A; color:#FFF8EE; box-shadow:0 2px 10px rgba(200,129,58,.28); }
+.cg-btn-back:hover { background:rgba(200,129,58,.10); border-color:rgba(200,129,58,.52); }
 .cg-btn-next:hover { background:#A06228; }
 .cg-ring     { position:absolute; top:12px; right:12px; width:34px; height:34px; }
 .cg-ring svg { transform:rotate(-90deg); }
-.cg-ring-c   { fill:none; stroke:rgba(255,255,255,.75); stroke-width:3; stroke-linecap:round; stroke-dasharray:86; stroke-dashoffset:0; }
-.cg-swipe    { font-size:10px; color:rgba(80,60,40,.38); text-align:center; margin-top:6px; display:none; }
+.cg-ring-c   { fill:none; stroke:rgba(200,129,58,.50); stroke-width:3; stroke-linecap:round; stroke-dasharray:86; stroke-dashoffset:0; }
+.cg-swipe    { font-size:10px; color:rgba(200,129,58,.30); text-align:center; margin-top:6px; display:none; }
 @media(pointer:coarse){ .cg-btns{display:none} .cg-swipe{display:block} }
-.cg-done-top     { text-align:center; padding:20px 16px 6px; }
-.cg-done-emoji   { font-size:52px; display:block; margin-bottom:6px; }
-.cg-done-title   { font-family:'Playfair Display',serif; font-size:18px; color:#F5ECD7; line-height:1.3; margin-bottom:3px; }
-.cg-done-sub     { font-size:12px; color:rgba(245,236,215,.52); font-style:italic; margin-bottom:16px; }
-.cg-done-btns    { padding:0 14px 16px; display:flex; flex-direction:column; gap:8px; }
+.cg-done-top     { text-align:center; padding:24px 20px 8px; }
+.cg-done-emoji   { display:none; }
+.cg-done-title   { font-family:'Playfair Display',serif; font-size:19px; color:rgba(245,236,215,.95); line-height:1.3; margin-bottom:4px; }
+.cg-done-sub     { font-size:12px; color:rgba(245,236,215,.45); font-style:italic; margin-bottom:18px; letter-spacing:.03em; }
+.cg-done-btns    { padding:0 20px 20px; display:flex; flex-direction:column; gap:8px; }
 .cg-btn-story, .cg-btn-reset {
-  font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px;
-  padding:11px 14px; border-radius:10px; border:none; cursor:pointer; text-align:center;
+  font-family:'DM Sans',sans-serif; font-weight:600; font-size:13px; letter-spacing:.03em;
+  padding:11px 16px; border-radius:10px; border:none; cursor:pointer; text-align:center;
+  transition:background .12s,box-shadow .12s;
 }
-.cg-btn-story { background:#C8813A; color:#FFF8EE; }
+.cg-btn-story { background:#C8813A; color:#FFF8EE; box-shadow:0 2px 12px rgba(200,129,58,.28); }
 .cg-btn-story:hover { background:#A06228; }
-.cg-btn-reset { background:rgba(245,236,215,.07); color:rgba(245,236,215,.58); border:1px solid rgba(245,236,215,.18); }
-.cg-btn-reset:hover { background:rgba(245,236,215,.14); }
+.cg-btn-reset { background:rgba(200,129,58,.08); color:rgba(200,129,58,.60); border:1px solid rgba(200,129,58,.22); }
+.cg-btn-reset:hover { background:rgba(200,129,58,.15); }
 `;
 
   /** Voice: say "next" or "continue" to advance step. Uses browser Speech Recognition; step audio is ElevenLabs. */
@@ -331,21 +342,18 @@ const CookingGuide = (() => {
       recognition.onend = () => {
         recognition.rolling = false;
         btn.classList.remove('cg-btn-voice--listening');
-        btn.innerHTML = '&#127908; Voice';
+        btn.innerHTML = 'Voice';
       };
       recognition.onerror = () => {
         btn.classList.remove('cg-btn-voice--listening');
-        btn.innerHTML = '&#127908; Voice';
+        btn.innerHTML = 'Voice';
       };
-      try { recognition.start(); } catch (err) { btn.classList.remove('cg-btn-voice--listening'); btn.innerHTML = '&#127908; Voice'; }
+      try { recognition.start(); } catch (err) { btn.classList.remove('cg-btn-voice--listening'); btn.innerHTML = 'Voice'; }
     });
   }
 
   function _buildOverlay() {
-    const el = document.createElement('div');
-    el.id = 'cg-root';
-    el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;';
-    el.innerHTML = `<style>${_CSS}</style>
+    const cardHTML = `<style>${_CSS}</style>
 <div id="cg-card">
   <div class="cg-hero" id="cg-hero">
     <span class="cg-hero-icon" id="cg-hero-icon"></span>
@@ -363,8 +371,8 @@ const CookingGuide = (() => {
     <div class="cg-phase"     id="cg-phase"></div>
     <div class="cg-title-row">
       <div class="cg-title" id="cg-title"></div>
-      <button type="button" class="cg-btn-listen" id="cg-btn-listen" title="Hear this step">&#128266; Listen</button>
-      <button type="button" class="cg-btn-voice" id="cg-btn-voice" title="Say &quot;next&quot; or &quot;continue&quot; to go to next step">&#127908; Voice</button>
+      <button type="button" class="cg-btn-listen" id="cg-btn-listen" title="Hear this step">Listen</button>
+      <button type="button" class="cg-btn-voice" id="cg-btn-voice" title="Say &quot;next&quot; or &quot;continue&quot; to go to next step">Voice</button>
     </div>
     <div class="cg-body-text" id="cg-body-text"></div>
     <div class="cg-tip"       id="cg-tip" style="display:none"></div>
@@ -375,7 +383,23 @@ const CookingGuide = (() => {
     <div class="cg-swipe">&#8592; swipe to navigate &#8594;</div>
   </div>
 </div>`;
-    document.body.appendChild(el);
+
+    const el = document.createElement('div');
+    el.id = 'cg-root';
+
+    const sidebarTarget = document.getElementById('k3d-instructions');
+    if (sidebarTarget) {
+      // Sidebar mode: render inline inside the instructions panel
+      el.innerHTML = cardHTML;
+      sidebarTarget.innerHTML = '';
+      sidebarTarget.appendChild(el);
+    } else {
+      // Fallback: floating fixed card appended to body
+      el.style.cssText = 'position:fixed;inset:0;pointer-events:none;z-index:9999;';
+      el.innerHTML = cardHTML;
+      document.body.appendChild(el);
+    }
+
     _overlayEl = el;
     _q('#cg-btn-next').addEventListener('click', () => _nextStep());
     _q('#cg-btn-back').addEventListener('click', () => prev());
@@ -1568,12 +1592,11 @@ const CookingGuide = (() => {
       card.classList.remove('cg-out'); card.classList.add('cg-done');
       card.innerHTML = `
 <div class="cg-done-top">
-  <span class="cg-done-emoji">🍲</span>
   <div class="cg-done-title">Three Sisters Stew &mdash; complete</div>
   <div class="cg-done-sub">Baaniibaanesi-Naboob</div>
 </div>
 <div class="cg-done-btns">
-  <button class="cg-btn-story" id="cg-btn-story" style="pointer-events:auto">Hear the story behind this dish &rarr;</button>
+  <button class="cg-btn-story" id="cg-btn-story" style="pointer-events:auto">Hear the origin story &rarr;</button>
   <button class="cg-btn-reset" id="cg-btn-reset" style="pointer-events:auto">Cook again</button>
 </div>`;
       document.getElementById('cg-btn-reset').addEventListener('click', () => reset());

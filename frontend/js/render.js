@@ -258,6 +258,7 @@ const AkiRender = (() => {
           const uploadData = AkiApp.state.uploadData;
           const found = uploadData?.suggestedRecipes?.find(s => s.recipe.id === recId);
           if (found) {
+            const wasSelected = (AkiApp.state.activeRecipe?.recipe?.id || '') === recId;
             AkiApp.state.activeRecipe = found;
             _set('recipe-title-ojibwe',  found.recipe.name);
             _set('recipe-title-english', found.recipe.description);
@@ -265,6 +266,10 @@ const AkiRender = (() => {
             sugList.querySelectorAll('.aki-recipe-sug').forEach(el => {
               el.classList.toggle('aki-recipe-sug--selected', el.dataset.recipeId === recId);
             });
+            // If user clicks the already-selected recipe, treat as "Cook this in 3D"
+            if (wasSelected) {
+              document.getElementById('btn-enter-kitchen3d')?.click();
+            }
           }
         });
       }

@@ -66,12 +66,6 @@
       </div>
     </div><!-- /.hero-content -->
 
-    <!-- Floating coords — top right (matches Hero3D.tsx hero-board-coords) -->
-    <div class="hero-coords" aria-hidden="true">
-      <div class="hero-coords__line">TERRITORY: ANISHINAABE</div>
-      <div class="hero-coords__line hero-coords__line--highlight">46.4954° N · 84.3476° W</div>
-    </div>
-
     <!-- Powered by logo cloud -->
     <div class="logo-cloud hero-logo-cloud">
       <p class="logo-cloud__label">Powered by</p>
@@ -369,19 +363,73 @@
 
   <!-- ── SCREEN: 3D KITCHEN ── -->
   <div class="screen screen-kitchen3d" data-screen="kitchen3d">
-    <div id="kitchen3d-container" style="width:100%;height:100%;background:#0a0a0a;"></div>
-    <div class="kitchen3d-overlay" id="kitchen3d-overlay">
-      <p style="color:var(--cream);font-size:14px;">Loading 3D scene...</p>
+
+    <!-- LEFT: Permanent sidebar -->
+    <div id="kitchen3d-sidebar">
+
+      <!-- TOP: navigation controls -->
+      <div class="k3d-top">
+        <button class="ar-btn ar-btn-prev" id="btn-kitchen3d-back">← Back to recipe</button>
+        <div class="k3d-top-actions">
+          <button id="btn-kitchen3d-story" class="k3d-story-btn">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+            Origin Story
+          </button>
+          <button id="btn-enter-xr" class="kitchen3d-btn kitchen3d-btn--xr">
+            Fullscreen
+          </button>
+        </div>
+      </div>
+
+      <!-- BOTTOM PANEL: Recipe + Instructions (segmented) -->
+      <div class="k3d-panel">
+
+        <!-- Recipe info block -->
+        <div class="k3d-panel-section k3d-panel-section--recipe">
+          <div class="k3d-section-label">Recipe</div>
+          <div class="k3d-recipe-nation" id="k3d-nation"></div>
+          <div class="k3d-recipe-title" id="k3d-title">Three Sisters Stew</div>
+          <div class="k3d-recipe-desc" id="k3d-desc"></div>
+
+          <!-- Floating stew 3D preview -->
+          <div class="k3d-stew-viewer-wrap">
+            <model-viewer
+              src="/assets/3d/stew.glb"
+              alt="Stew 3D preview"
+              auto-rotate
+              auto-rotate-delay="0"
+              rotation-per-second="18deg"
+              camera-orbit="0deg 72deg 4m"
+              min-camera-orbit="auto auto 4m"
+              max-camera-orbit="auto auto 4m"
+              disable-zoom
+              shadow-intensity="0"
+              exposure="1.3"
+              class="k3d-stew-viewer"
+            ></model-viewer>
+          </div>
+
+          <span class="kitchen3d-ingredient-label" id="kitchen3d-ingredient-label" style="display:none"></span>
+        </div>
+
+        <!-- Instructions block — dedicated panel, pinned to bottom of sidebar -->
+        <div class="k3d-panel-section k3d-panel-section--steps">
+          <div class="k3d-section-label">Instructions</div>
+          <div class="k3d-bottom" id="k3d-instructions"></div>
+        </div>
+
+      </div>
+
     </div>
-    <button class="ar-btn ar-btn-prev" id="btn-kitchen3d-back"
-      style="position:absolute;bottom:24px;left:24px;z-index:10;">
-      ← Back to recipe
-    </button>
-    <button class="btn-primary" id="btn-kitchen3d-story"
-      style="position:absolute;bottom:24px;right:24px;z-index:10;padding:12px 20px;">
-      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
-      Learn the origin story
-    </button>
+
+    <!-- RIGHT: 3D canvas area -->
+    <div id="kitchen3d-canvas-wrap">
+      <div class="k3d-window-frame">
+        <div id="kitchen3d-container"></div>
+      </div>
+      <div class="kitchen3d-overlay" id="kitchen3d-overlay"></div>
+    </div>
+
   </div>
 
   <!-- ── ANIME TOP NAV ── -->
@@ -462,7 +510,6 @@
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/TransformControls.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <script src="js/utils.js"></script>

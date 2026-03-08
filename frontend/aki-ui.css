@@ -1309,18 +1309,52 @@ body {
 
 /* ── SCREEN: 3D KITCHEN ──────────────────────────── */
 .screen-kitchen3d {
-  background: #0a0a0a;
+  display: flex;
+  flex-direction: row;
+  background: #080603;
   padding: 0;
   overflow: hidden;
   height: 100vh;
   min-height: 100vh;
 }
 
+/* Canvas area — padded so the windowed frame floats inside */
+#kitchen3d-canvas-wrap {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  min-width: 0;
+  padding: 56px 52px 56px 40px;
+  display: flex;
+  align-items: stretch;
+  background:
+    radial-gradient(ellipse at 60% 40%, rgba(200,129,58,0.05) 0%, transparent 55%),
+    #080603;
+}
+
+/* Outer border frame — matches uc-border, but darker/more bronze */
+.k3d-window-frame {
+  flex: 1;
+  padding: 7px;
+  background: linear-gradient(135deg,
+    #7A4518 0%, #A06028 35%, #5A3010 55%, #8A5220 78%, #9A6830 100%);
+  clip-path: var(--uc-clip);
+  filter:
+    drop-shadow(0 2px 0 #3A1C06)
+    drop-shadow(0 5px 0 #200E02)
+    drop-shadow(0 16px 36px rgba(0,0,0,0.95))
+    drop-shadow(0  0  20px rgba(140,80,20,0.30));
+  display: flex;
+  align-items: stretch;
+}
+
+/* Inner canvas — matches uc-inner dark gradient + same clip-path */
 #kitchen3d-container {
-  position: absolute;
-  inset: 0;
-  width: 100%;
-  height: 100%;
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(160deg, #1A1006 0%, #0E0804 60%, #160F05 100%);
+  clip-path: var(--uc-clip);
 }
 
 #kitchen3d-container canvas {
@@ -1331,10 +1365,315 @@ body {
 
 .kitchen3d-overlay {
   position: absolute;
-  top: 24px;
-  left: 24px;
+  top: 56px;
+  left: 40px;
+  right: 52px;
+  bottom: 56px;
   z-index: 10;
   pointer-events: none;
+  display: none;
+  clip-path: var(--uc-clip);
+  overflow: hidden;
+}
+
+/* ── Sidebar (LEFT) ─────────────────────────────────── */
+#kitchen3d-sidebar {
+  width: 430px;
+  flex-shrink: 0;
+  display: flex;
+  flex-direction: column;
+  background: linear-gradient(160deg, #1A1006 0%, #0E0804 60%, #160F05 100%);
+  border-right: 1px solid rgba(200,129,58,0.32);
+  overflow: hidden;
+  z-index: 20;
+  position: relative;
+}
+
+/* Gold sheen along the right edge */
+#kitchen3d-sidebar::after {
+  content: '';
+  position: absolute;
+  top: 0; right: 0; bottom: 0;
+  width: 1px;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    rgba(200,129,58,0.55) 25%,
+    rgba(245,176,74,0.4) 50%,
+    rgba(200,129,58,0.55) 75%,
+    transparent 100%
+  );
+  pointer-events: none;
+  z-index: 1;
+}
+
+.k3d-top {
+  padding: 14px 20px 12px;
+  border-bottom: 1px solid rgba(200,129,58,0.18);
+  background: linear-gradient(180deg, rgba(200,129,58,0.07) 0%, rgba(200,129,58,0.02) 100%);
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  flex-shrink: 0;
+}
+
+.k3d-top-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: nowrap;
+}
+
+.k3d-story-btn {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 9px 14px;
+  background: var(--forest);
+  color: var(--cream);
+  border: none;
+  border-radius: 8px;
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: 'DM Sans', sans-serif;
+  transition: background 0.15s;
+  white-space: nowrap;
+}
+.k3d-story-btn:hover { background: var(--forest-light); }
+
+/* Remove old k3d-mid — recipe info now lives inside k3d-panel-section */
+
+/* ── Sidebar bottom panel — two clearly segmented containers ── */
+.k3d-panel {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  gap: 0;
+}
+
+.k3d-panel-section {
+  display: flex;
+  flex-direction: column;
+  border-top: 1px solid rgba(200,129,58,0.20);
+}
+
+/* Recipe block — compact, content height only */
+.k3d-panel-section--recipe {
+  flex-shrink: 0;
+  padding: 0 24px 12px;
+  background: linear-gradient(180deg, rgba(45,74,53,0.28) 0%, rgba(45,74,53,0.10) 50%, transparent 100%);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Instructions block — extends to fill all remaining sidebar height */
+.k3d-panel-section--steps {
+  flex: 1;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  /* Framed panel: strong border on all sides with a bronze inset glow */
+  border-top: 2px solid rgba(200,129,58,0.55);
+  border-left: 1px solid rgba(200,129,58,0.25);
+  border-right: 1px solid rgba(200,129,58,0.20);
+  border-bottom: none;
+  background:
+    linear-gradient(180deg, rgba(200,129,58,0.06) 0%, rgba(0,0,0,0.30) 60px),
+    rgba(8,6,3,0.70);
+  box-shadow: inset 0 1px 0 rgba(245,176,74,0.18), inset 0 0 40px rgba(0,0,0,0.35);
+  margin: 0 10px 0;
+  border-radius: 8px 8px 0 0;
+  position: relative;
+}
+
+/* Section header label row */
+.k3d-section-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(200,129,58,0.70);
+  padding: 10px 22px 8px;
+  background: rgba(200,129,58,0.06);
+  border-bottom: 1px solid rgba(200,129,58,0.14);
+  flex-shrink: 0;
+}
+
+/* Instructions panel header — dedicated framed header */
+.k3d-panel-section--steps > .k3d-section-label {
+  font-size: 9.5px;
+  letter-spacing: 0.20em;
+  color: rgba(245,236,215,0.85);
+  padding: 8px 24px 7px;
+  background: rgba(200,129,58,0.14);
+  border-bottom: 1px solid rgba(200,129,58,0.28);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.k3d-panel-section--steps > .k3d-section-label::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 14px;
+  background: linear-gradient(180deg, #F5B04A, #C8813A);
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(245,176,74,0.50);
+}
+
+/* Recipe section label — accent bar + integrated look */
+.k3d-panel-section--recipe > .k3d-section-label {
+  font-size: 9.5px;
+  letter-spacing: 0.20em;
+  color: rgba(245,236,215,0.85);
+  padding: 10px 24px 9px;
+  margin: 0 -24px;
+  background: rgba(200,129,58,0.08);
+  border-bottom: 1px solid rgba(200,129,58,0.18);
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.k3d-panel-section--recipe > .k3d-section-label::before {
+  content: '';
+  display: block;
+  width: 3px;
+  height: 14px;
+  background: linear-gradient(180deg, #F5B04A, #C8813A);
+  border-radius: 2px;
+  flex-shrink: 0;
+  box-shadow: 0 0 6px rgba(245,176,74,0.50);
+}
+
+.k3d-recipe-nation {
+  font-size: 9.5px;
+  font-weight: 700;
+  letter-spacing: 0.13em;
+  text-transform: uppercase;
+  color: var(--ochre);
+  margin-top: 14px;
+  margin-bottom: 6px;
+}
+
+.k3d-recipe-title {
+  font-family: 'Playfair Display', serif;
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--cream);
+  line-height: 1.25;
+  margin-bottom: 6px;
+}
+
+.k3d-recipe-desc {
+  font-size: 14px;
+  color: rgba(245,236,215,0.65);
+  line-height: 1.55;
+  margin-bottom: 4px;
+}
+
+/* ── Floating stew model-viewer inside recipe section ── */
+.k3d-stew-viewer-wrap {
+  flex-shrink: 0;
+  margin: 4px 0 8px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.k3d-stew-viewer {
+  width: 210px;
+  height: 210px;
+  flex-shrink: 0;
+  background: transparent;
+  --poster-color: transparent;
+}
+
+.kitchen3d-ingredient-label {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 8px;
+  background: rgba(200,129,58,0.18);
+  color: var(--cream);
+  font-size: 13px;
+  font-weight: 600;
+  border: 1px solid rgba(200,129,58,0.45);
+  margin-top: 6px;
+}
+
+.k3d-bottom {
+  overflow-y: auto;
+  overflow-x: hidden;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 4px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(200,129,58,0.25) transparent;
+}
+.k3d-bottom::-webkit-scrollbar { width: 4px; }
+.k3d-bottom::-webkit-scrollbar-track { background: transparent; }
+.k3d-bottom::-webkit-scrollbar-thumb { background: rgba(200,129,58,0.25); border-radius: 2px; }
+
+/* CookingGuide card overrides when rendered inside sidebar */
+#k3d-instructions #cg-root {
+  position: static !important;
+  inset: auto !important;
+}
+#k3d-instructions #cg-card {
+  position: relative !important;
+  bottom: auto !important;
+  right: auto !important;
+  width: 100% !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+#k3d-instructions .cg-done-btns {
+  padding-bottom: 24px;
+}
+
+/* Center step action buttons within the canvas area (sidebar is now on left, 430px wide) */
+#cg-start-cutting,
+#cg-start-pouring,
+#cg-start-boiling,
+#cg-start-veggies,
+#cg-start-beans-corn,
+#cg-start-stirring {
+  left: calc(430px + (100vw - 430px) / 2) !important;
+}
+
+/* Mobile: canvas on top, sidebar below */
+@media (max-width: 700px) {
+  .screen-kitchen3d { flex-direction: column; }
+  #kitchen3d-canvas-wrap {
+    flex: none;
+    height: 45vh;
+    order: 1;
+    padding: 12px;
+  }
+  #kitchen3d-sidebar {
+    width: 100%;
+    border-right: none;
+    border-top: 1px solid rgba(200,129,58,0.25);
+    height: 55vh;
+    order: 2;
+  }
+  .k3d-panel-section--steps {
+    margin: 0 6px 0;
+  }
+  .k3d-panel-section--steps > .k3d-section-label::before { display: none; }
+  .k3d-window-frame {
+    clip-path: var(--uc-clip);
+  }
+  #cg-start-cutting, #cg-start-pouring, #cg-start-boiling,
+  #cg-start-veggies, #cg-start-beans-corn, #cg-start-stirring {
+    left: 50% !important;
+    bottom: calc(55vh + 16px) !important;
+  }
 }
 
 .kitchen3d-btn {
@@ -2008,11 +2347,12 @@ body {
   background: linear-gradient(135deg, rgba(200,129,58,0.55) 0%, rgba(160,98,40,0.55) 100%) !important;
   color: #FFF8EE !important;
   border: 1.5px solid rgba(200,129,58,0.55) !important;
-  padding-left: 20px !important;
+  padding: 8px 16px !important;
   font-weight: 600 !important;
   letter-spacing: 0.3px;
   box-shadow: 0 2px 12px rgba(200,129,58,0.30);
   transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+  white-space: nowrap;
 }
 
 .kitchen3d-btn--xr:hover {
