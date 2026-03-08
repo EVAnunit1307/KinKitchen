@@ -648,115 +648,147 @@ body {
 /* ── SCREEN 4: DETECTION ───────────────────────────── */
 .screen-detect {
   background: #0a0a0a;
-  background-image: radial-gradient(circle, rgba(200,129,58,0.08) 1px, transparent 1px);
-  background-size: 24px 24px;
+  background-image: radial-gradient(circle, rgba(200,129,58,0.07) 1px, transparent 1px);
+  background-size: 28px 28px;
   display: flex;
   align-items: flex-start;
   justify-content: center;
   min-height: 100vh;
-  padding: 90px 20px 80px;
+  padding: 80px 40px 100px;
   box-sizing: border-box;
   overflow-y: auto;
+  perspective: 1000px;
 }
 
-/* ── iPad scroll container ── */
+/* ── ContainerScroll wrapper ── */
 .ipad-scroll-container {
   width: 100%;
-  max-width: 700px;
+  max-width: 900px;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 0;
 }
 
+/* Header text — translates up slightly as card animates in */
 .ipad-header-text {
   text-align: center;
-  margin-bottom: 32px;
-  animation: ipadFadeUp 0.6s cubic-bezier(0.16,1,0.3,1) both;
+  margin-bottom: 40px;
+  animation: detectHeaderIn 0.7s cubic-bezier(0.16,1,0.3,1) both;
 }
 
-@keyframes ipadFadeUp {
-  from { opacity: 0; transform: translateY(30px) rotateX(10deg); }
-  to   { opacity: 1; transform: translateY(0) rotateX(0deg); }
+@keyframes detectHeaderIn {
+  from { opacity: 0; transform: translateY(24px); }
+  to   { opacity: 1; transform: translateY(0); }
 }
 
 .ipad-eyebrow {
   font-size: 11px;
-  letter-spacing: 0.14em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: rgba(200,129,58,0.7);
-  margin: 0 0 8px;
+  color: rgba(200,129,58,0.75);
+  margin: 0 0 12px;
   font-family: 'DM Sans', sans-serif;
 }
 
 .ipad-title {
   font-family: 'Playfair Display', serif;
-  font-size: 36px;
+  font-size: 52px;
   font-weight: 700;
   color: #F5E8CC;
-  margin: 0 0 6px;
-  line-height: 1.15;
+  margin: 0 0 8px;
+  line-height: 1.1;
 }
 
 .ipad-subtitle {
-  font-size: 14px;
-  color: rgba(245,232,204,0.45);
+  font-size: 16px;
+  color: rgba(245,232,204,0.4);
   margin: 0;
   font-style: italic;
+  letter-spacing: 0.02em;
 }
 
-/* ── iPad frame ── */
+/* ── Laptop frame (ContainerScroll Card equivalent) ── */
 .ipad-frame {
-  perspective: 1200px;
   width: 100%;
-  animation: ipadTiltIn 0.8s cubic-bezier(0.16,1,0.3,1) 0.1s both;
+  animation: laptopTiltIn 0.9s cubic-bezier(0.16,1,0.3,1) 0.15s both;
+  transform-origin: center bottom;
 }
 
-@keyframes ipadTiltIn {
-  from { opacity: 0; transform: rotateX(20deg) scale(0.95) translateY(40px); }
-  to   { opacity: 1; transform: rotateX(0deg) scale(1) translateY(0); }
+@keyframes laptopTiltIn {
+  from {
+    opacity: 0;
+    transform: rotateX(22deg) scale(1.04) translateY(60px);
+    box-shadow: 0 0 #0000004d, 0 9px 20px #0000004a;
+  }
+  to {
+    opacity: 1;
+    transform: rotateX(0deg) scale(1) translateY(0);
+  }
 }
 
 .ipad-device {
-  background: #1c1c1e;
-  border-radius: 30px;
-  border: 6px solid #2a2a2c;
+  background: #222;
+  border-radius: 20px;
+  border: 4px solid #3a3a3a;
   box-shadow:
-    0 0 0 1px rgba(255,255,255,0.08),
-    0 30px 80px rgba(0,0,0,0.7),
-    0 0 40px rgba(200,129,58,0.12);
+    0 0 #0000004d,
+    0 9px 20px #0000004a,
+    0 37px 37px #00000042,
+    0 84px 50px #00000026,
+    0 0 60px rgba(200,129,58,0.08);
   overflow: hidden;
   position: relative;
   width: 100%;
 }
 
+/* MacBook-style top bar inside device */
 .ipad-camera {
-  position: absolute;
-  top: 14px;
-  left: 50%;
-  transform: translateX(-50%);
+  width: 100%;
+  height: 36px;
+  background: #2a2a2a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+  position: relative;
+  flex-shrink: 0;
+}
+
+.ipad-camera::after {
+  content: '';
   width: 8px; height: 8px;
-  background: #0a0a0a;
+  background: #111;
   border-radius: 50%;
-  border: 1px solid rgba(255,255,255,0.1);
-  z-index: 10;
+  border: 1px solid rgba(255,255,255,0.12);
+}
+
+/* Traffic light dots */
+.ipad-camera::before {
+  content: '';
+  position: absolute;
+  left: 14px; top: 50%;
+  transform: translateY(-50%);
+  width: 36px; height: 10px;
+  background:
+    radial-gradient(circle 5px at 5px 5px, #ff5f57 0%, #ff5f57 100%) no-repeat 0 0,
+    radial-gradient(circle 5px at 5px 5px, #ffbd2e 0%, #ffbd2e 100%) no-repeat 14px 0,
+    radial-gradient(circle 5px at 5px 5px, #28c840 0%, #28c840 100%) no-repeat 28px 0;
 }
 
 .ipad-screen {
-  margin: 32px 0 0;
   background: #111;
-  border-radius: 4px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  min-height: 500px;
 }
 
 .ipad-home-bar {
-  width: 120px;
+  width: 100px;
   height: 4px;
-  background: rgba(255,255,255,0.25);
+  background: rgba(255,255,255,0.15);
   border-radius: 2px;
-  margin: 12px auto;
+  margin: 10px auto;
 }
 
 .detect-image-area {
@@ -1532,27 +1564,64 @@ body {
   z-index: 9999;
   display: flex;
   justify-content: center;
-  padding-top: 20px;
+  padding-top: 14px;
   pointer-events: none;
 }
 
-.anime-nav-pill {
+/* Wrapper: relative container for pill + mascot together */
+.anime-nav-wrapper {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+}
+
+/* Mascot sits in the wrapper ABOVE the pill */
+.anime-mascot {
   position: relative;
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: 4px;
-  background: rgba(0,0,0,0.55);
+  margin-bottom: -2px;
+  animation: mascotBob 2.5s ease-in-out infinite;
+  pointer-events: none;
+  filter: drop-shadow(0 3px 8px rgba(0,0,0,0.6));
+  transition: transform 0.4s cubic-bezier(0.34,1.56,0.64,1),
+              left       0.4s cubic-bezier(0.34,1.56,0.64,1);
+  /* JS will set translateX to slide mascot horizontally */
+}
+
+@keyframes mascotBob {
+  0%, 100% { transform: translateX(var(--mx,0px)) translateY(0px); }
+  50%       { transform: translateX(var(--mx,0px)) translateY(-5px); }
+}
+
+.anime-mascot-pointer {
+  width: 0; height: 0;
+  border-left: 7px solid transparent;
+  border-right: 7px solid transparent;
+  border-top: 9px solid white;
+  margin-top: -3px;
+}
+
+.anime-nav-pill {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: rgba(8,8,8,0.80);
   border: 1px solid rgba(255,255,255,0.10);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  padding: 6px 8px;
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  padding: 5px 6px;
   border-radius: 999px;
   pointer-events: auto;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.6), 0 0 0 1px rgba(255,255,255,0.04) inset;
   animation: navSlideIn 0.5s cubic-bezier(0.34,1.56,0.64,1) both;
 }
 
 @keyframes navSlideIn {
-  from { transform: translateY(-24px); opacity: 0; }
+  from { transform: translateY(-20px); opacity: 0; }
   to   { transform: translateY(0);     opacity: 1; }
 }
 
@@ -1562,46 +1631,24 @@ body {
   font-family: 'DM Sans', sans-serif;
   font-size: 14px;
   font-weight: 600;
-  padding: 8px 22px;
+  padding: 9px 26px;
   border-radius: 999px;
-  color: rgba(255,255,255,0.55);
-  transition: color 0.2s;
+  color: rgba(255,255,255,0.42);
+  transition: color 0.2s, background 0.2s, box-shadow 0.2s;
   user-select: none;
   white-space: nowrap;
 }
 
-.nav-item:hover { color: rgba(255,255,255,0.85); }
+.nav-item:hover {
+  color: #C8813A;
+  background: rgba(200,129,58,0.10);
+}
 
 .nav-item.active {
-  color: #fff;
+  color: #F5B04A;
   background: rgba(200,129,58,0.18);
-  box-shadow: 0 0 0 1px rgba(200,129,58,0.3) inset;
-}
-
-/* Mascot (absolute, slides over the pill) */
-.anime-mascot {
-  position: absolute;
-  top: -52px;
-  left: 0;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  transition: left 0.4s cubic-bezier(0.34,1.56,0.64,1);
-  pointer-events: none;
-  animation: mascotBob 2s ease-in-out infinite;
-}
-
-@keyframes mascotBob {
-  0%, 100% { transform: translateY(0); }
-  50%       { transform: translateY(-4px); }
-}
-
-.anime-mascot-tail {
-  width: 10px; height: 10px;
-  background: white;
-  transform: rotate(45deg);
-  margin-top: -5px;
-  border-radius: 2px;
+  box-shadow: 0 0 0 1px rgba(200,129,58,0.3) inset,
+              0 0 20px rgba(200,129,58,0.12);
 }
 
 /* ── SPINNER (reuse existing styles.css def if present) ── */

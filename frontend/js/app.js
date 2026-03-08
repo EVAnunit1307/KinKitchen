@@ -119,14 +119,14 @@ const AkiApp = (() => {
 
   // ── Anime nav mascot positioning ──────────────────────────────────────────
   function updateMascot(activeItem) {
-    const mascot = document.getElementById('anime-mascot');
-    const pill   = document.querySelector('.anime-nav-pill');
-    if (!mascot || !pill || !activeItem) return;
-    const pillRect = pill.getBoundingClientRect();
-    const itemRect = activeItem.getBoundingClientRect();
-    // Center mascot over the active tab
-    const centerX = itemRect.left + itemRect.width / 2 - pillRect.left - 22; // 22 = half mascot width
-    mascot.style.left = centerX + 'px';
+    const mascot  = document.getElementById('anime-mascot');
+    const wrapper = document.querySelector('.anime-nav-wrapper');
+    if (!mascot || !wrapper || !activeItem) return;
+    const wrapperRect = wrapper.getBoundingClientRect();
+    const itemRect    = activeItem.getBoundingClientRect();
+    // translateX to center mascot over active tab (mascot is 40px wide)
+    const mx = (itemRect.left + itemRect.width / 2) - (wrapperRect.left + wrapperRect.width / 2);
+    mascot.style.setProperty('--mx', mx + 'px');
   }
 
   // ── Bottom nav clicks ──────────────────────────────────────────────────────
