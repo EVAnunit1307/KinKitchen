@@ -1457,3 +1457,621 @@ body {
     linear-gradient(#0000, #0000),
     linear-gradient(#fff, #fff);
 }
+
+/* ═══════════════════════════════════════════════════════
+   WebXR / Immersive Entry Styles
+   ═══════════════════════════════════════════════════════ */
+
+/* ── Immersive Entry — Primary CTA button ─────────────── */
+.btn-xr-entry {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 20px 28px;
+  margin-bottom: 10px;
+  background: linear-gradient(135deg, #C8813A 0%, #A05C20 100%);
+  color: #FFF8EE;
+  border: none;
+  border-radius: 16px;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+  cursor: pointer;
+  box-shadow:
+    0 4px 24px rgba(200,129,58,0.50),
+    0 0 0 1.5px rgba(200,129,58,0.35),
+    inset 0 1px 0 rgba(255,255,255,0.15);
+  animation: xr-pulse-shadow 2.6s ease-in-out infinite;
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+
+.btn-xr-entry:hover {
+  transform: translateY(-2px) scale(1.015);
+  box-shadow:
+    0 8px 36px rgba(200,129,58,0.65),
+    0 0 0 2px rgba(200,129,58,0.6),
+    inset 0 1px 0 rgba(255,255,255,0.2);
+}
+
+.btn-xr-entry:active {
+  transform: scale(0.97);
+}
+
+@keyframes xr-pulse-shadow {
+  0%, 100% { box-shadow: 0 4px 24px rgba(200,129,58,0.50), 0 0 0 1.5px rgba(200,129,58,0.35), inset 0 1px 0 rgba(255,255,255,0.15); }
+  50%       { box-shadow: 0 4px 40px rgba(200,129,58,0.80), 0 0 0 3px   rgba(200,129,58,0.55), inset 0 1px 0 rgba(255,255,255,0.20); }
+}
+
+/* ── XR tagline under entry button ───────────────────── */
+.xr-tagline {
+  font-size: 12px;
+  color: rgba(245,236,215,0.45);
+  text-align: center;
+  letter-spacing: 0.5px;
+  margin-bottom: 20px;
+  font-style: italic;
+}
+
+/* ── 3D Nation Map canvas wrapper (inside .screen-nation) ─ */
+.nation-map-canvas-wrap,
+#nation-map-canvas-wrap {
+  position: relative;
+  width: 100%;
+  height: 240px;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 8px;
+  background: #0D1810;
+  border: 1px solid rgba(200,129,58,0.18);
+  flex-shrink: 0;
+}
+
+/* Allow nation screen to scroll when 3D map + cards don't fit */
+.screen-nation {
+  overflow-y: auto !important;
+}
+
+/* ── XR button wrapper — pulsing SVG ring ─────────────── */
+.xr-btn-wrap {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+}
+
+.xr-pulse-ring {
+  position: absolute;
+  left: -8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  pointer-events: none;
+  opacity: 0.85;
+}
+
+/* ── kitchen3d XR button variant ─────────────────────── */
+.kitchen3d-btn--xr {
+  background: linear-gradient(135deg, rgba(200,129,58,0.55) 0%, rgba(160,98,40,0.55) 100%) !important;
+  color: #FFF8EE !important;
+  border: 1.5px solid rgba(200,129,58,0.55) !important;
+  padding-left: 20px !important;
+  font-weight: 600 !important;
+  letter-spacing: 0.3px;
+  box-shadow: 0 2px 12px rgba(200,129,58,0.30);
+  transition: background 0.2s, box-shadow 0.2s, transform 0.1s;
+}
+
+.kitchen3d-btn--xr:hover {
+  background: linear-gradient(135deg, rgba(200,129,58,0.8) 0%, rgba(160,98,40,0.8) 100%) !important;
+  box-shadow: 0 4px 20px rgba(200,129,58,0.55);
+  transform: translateY(-1px);
+}
+
+/* ═══════════════════════════════════════════════════════════
+   HERO3D SPLASH  —  ports GrowthSync Hero3D layout to Aki
+   ═══════════════════════════════════════════════════════════ */
+
+/* ── Splash container: full-screen, dark base ─────────────── */
+.hero-splash {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  background: #0E0B07;
+  overflow: hidden;
+  display: flex;
+  align-items: stretch;
+}
+
+#hero3d-canvas {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  pointer-events: none;
+}
+
+/* ── Film grain overlay ───────────────────────────────────── */
+.hero-grain {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  opacity: 0.045;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='1'/%3E%3C/svg%3E");
+  background-size: 256px 256px;
+  mix-blend-mode: overlay;
+}
+
+/* ── Left content panel ───────────────────────────────────── */
+.hero-content {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 48px 52px;
+  width: min(520px, 52%);
+  min-height: 100%;
+  background: linear-gradient(
+    105deg,
+    rgba(14, 11, 7, 0.92) 0%,
+    rgba(14, 11, 7, 0.78) 65%,
+    rgba(14, 11, 7, 0.0) 100%
+  );
+}
+
+/* ── Brand header ─────────────────────────────────────────── */
+.hero-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 40px;
+  animation: heroFadeUp 0.7s ease both;
+}
+
+.hero-brand__name {
+  font-family: 'Playfair Display', serif;
+  font-size: 1.15rem;
+  font-weight: 600;
+  color: var(--ochre);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.hero-brand__dot { color: rgba(200,129,58,0.45); font-size: 1.1rem; }
+
+.hero-brand__sub {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.72rem;
+  color: rgba(245,236,215,0.45);
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+/* ── Title block ──────────────────────────────────────────── */
+.hero-title-wrap {
+  margin-bottom: 20px;
+  animation: heroFadeUp 0.8s ease 0.1s both;
+}
+
+.hero-title {
+  font-family: 'Playfair Display', serif;
+  font-size: clamp(2.4rem, 4.5vw, 3.6rem);
+  font-weight: 600;
+  line-height: 1.12;
+  color: var(--cream);
+  letter-spacing: -0.02em;
+  margin-bottom: 14px;
+}
+
+.hero-title--em { color: var(--ochre); font-style: italic; }
+
+.hero-subtitle {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 1.05rem;
+  font-weight: 300;
+  color: rgba(245,236,215,0.65);
+  line-height: 1.55;
+}
+
+/* ── Sub text ─────────────────────────────────────────────── */
+.hero-subtext {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.82rem;
+  color: rgba(245,236,215,0.42);
+  line-height: 1.6;
+  margin-bottom: 32px;
+  animation: heroFadeUp 0.9s ease 0.2s both;
+}
+
+/* ── CTAs ─────────────────────────────────────────────────── */
+.hero-ctas {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+  animation: heroFadeUp 1.0s ease 0.3s both;
+}
+
+.hero-btn-primary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 24px;
+  border-radius: 10px;
+  border: 1.5px solid var(--ochre);
+  background: var(--ochre);
+  color: #0E0B07;
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: box-shadow 0.25s, transform 0.1s, color 0.25s;
+  letter-spacing: 0.01em;
+}
+
+.hero-btn-primary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: #fff;
+  transform: translateY(101%);
+  transition: transform 0.38s cubic-bezier(0.19, 1, 0.22, 1);
+  z-index: 0;
+}
+.hero-btn-primary > * { position: relative; z-index: 1; }
+.hero-btn-primary:hover::after { transform: translateY(0); }
+.hero-btn-primary:hover { color: var(--ochre); box-shadow: 0 6px 24px rgba(200,129,58,0.45); }
+.hero-btn-primary:active { transform: scale(0.98); }
+
+.hero-btn-secondary {
+  position: relative;
+  overflow: hidden;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 22px;
+  border-radius: 10px;
+  border: 1.5px solid rgba(245,236,215,0.22);
+  background: rgba(245,236,215,0.07);
+  color: rgba(245,236,215,0.8);
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.9rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: border-color 0.2s, transform 0.1s;
+  letter-spacing: 0.01em;
+  backdrop-filter: blur(6px);
+}
+
+.hero-btn-secondary::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(245,236,215,0.12);
+  transform: translateY(101%);
+  transition: transform 0.38s cubic-bezier(0.19, 1, 0.22, 1);
+}
+.hero-btn-secondary:hover::after { transform: translateY(0); }
+.hero-btn-secondary:hover { border-color: rgba(245,236,215,0.45); }
+.hero-btn-secondary:active { transform: scale(0.98); }
+
+/* ── Ghost link ───────────────────────────────────────────── */
+.hero-ghost {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.78rem;
+  color: rgba(245,236,215,0.32);
+  cursor: pointer;
+  transition: color 0.2s;
+  animation: heroFadeUp 1.1s ease 0.4s both;
+  margin-top: 4px;
+  background: none;
+  border: none;
+  padding: 0;
+}
+.hero-ghost:hover { color: rgba(245,236,215,0.65); }
+
+/* ── Floating coords — top right ──────────────────────────── */
+.hero-coords {
+  position: absolute;
+  top: 28px;
+  right: 32px;
+  z-index: 20;
+  text-align: right;
+  animation: heroFadeIn 1.2s ease 0.5s both;
+}
+
+.hero-coords__line {
+  font-family: 'DM Sans', sans-serif;
+  font-size: 0.62rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(245,236,215,0.28);
+  line-height: 1.8;
+}
+
+.hero-coords__line--highlight { color: var(--ochre); opacity: 0.75; }
+
+/* ── Logo cloud — absolute at bottom ─────────────────────── */
+.hero-logo-cloud {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 15;
+}
+
+/* ── Entry animations ─────────────────────────────────────── */
+@keyframes heroFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes heroFadeIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+/* ── Edge vignette — frames the 3D, adds cinematic depth ─── */
+.hero-vignette {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background:
+    radial-gradient(ellipse 80% 80% at 70% 50%,
+      transparent 30%,
+      rgba(14, 11, 7, 0.55) 70%,
+      rgba(14, 11, 7, 0.92) 100%),
+    linear-gradient(to bottom,
+      rgba(14, 11, 7, 0.55) 0%,
+      transparent 18%,
+      transparent 72%,
+      rgba(14, 11, 7, 0.70) 100%);
+}
+
+/* ── Loading pulse — shown while the 34 MB GLB is fetching ── */
+.hero-loader {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  z-index: 3;
+  display: flex;
+  gap: 7px;
+  align-items: center;
+  pointer-events: none;
+  opacity: 0;                /* hidden by default — JS shows it */
+  transition: opacity 0.5s ease;
+}
+
+.hero-loader span {
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--ochre);
+  opacity: 0.7;
+  animation: heroLoaderPulse 1.1s ease-in-out infinite;
+}
+.hero-loader span:nth-child(2) { animation-delay: 0.18s; }
+.hero-loader span:nth-child(3) { animation-delay: 0.36s; }
+
+@keyframes heroLoaderPulse {
+  0%, 100% { transform: scale(0.6); opacity: 0.25; }
+  50%       { transform: scale(1.2); opacity: 0.85; }
+}
+
+/* ── Responsive: mobile ───────────────────────────────────── */
+@media (max-width: 640px) {
+  .hero-content {
+    width: 100%;
+    padding: 36px 28px 120px;
+    background: linear-gradient(
+      180deg,
+      rgba(14,11,7,0.95) 0%,
+      rgba(14,11,7,0.85) 60%,
+      rgba(14,11,7,0.0) 100%
+    );
+    justify-content: flex-end;
+  }
+  .hero-title { font-size: 2.0rem; }
+  .hero-ctas  { flex-direction: column; }
+  .hero-btn-primary,
+  .hero-btn-secondary { width: 100%; justify-content: center; }
+  .hero-coords { top: 16px; right: 16px; }
+  .hero-loader { left: 50%; transform: translate(-50%, -50%); }
+  .hero-vignette {
+    background:
+      linear-gradient(to bottom,
+        rgba(14,11,7,0.7) 0%,
+        transparent 25%,
+        transparent 60%,
+        rgba(14,11,7,0.85) 100%);
+  }
+}
+
+
+
+/* ── Hero Food Card — rough game-card with angled 3D edges ───────────────── */
+
+/* Jagged polygon shared between border shell and inner face */
+/* Top-left chip, top-right notch, right-side nick, bottom-right chip, bottom-left notch */
+:root {
+  --hfc-clip: polygon(
+    0        22px,
+    8px       8px,
+    22px      0,
+    calc(100% - 10px) 0,
+    100%      10px,
+    100%      calc(100% - 28px),
+    calc(100% - 14px) calc(100% - 14px),
+    calc(100% - 28px) 100%,
+    14px      100%,
+    0         calc(100% - 14px)
+  );
+}
+
+#hero-food-card {
+  position: absolute;
+  right: 5%;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  perspective: 1000px;
+  cursor: pointer;
+  --rx: 0deg;
+  --ry: 0deg;
+}
+
+/* ── Outer border shell (slightly larger, gold) ── */
+.hfc-border {
+  padding: 3px;
+  background: linear-gradient(135deg,
+    #C8813A 0%, #F5B04A 30%, #8A5520 55%, #C8813A 75%, #F5D080 100%);
+  clip-path: var(--hfc-clip);
+  transform: rotateX(var(--rx)) rotateY(var(--ry));
+  transform-style: preserve-3d;
+  transition: transform 0.10s ease;
+  will-change: transform;
+  /* 3D card thickness illusion via layered shadows */
+  filter:
+    drop-shadow(0 2px 0 #5A3010)
+    drop-shadow(0 4px 0 #3A1E08)
+    drop-shadow(0 6px 0 #1E0E02)
+    drop-shadow(0 14px 30px rgba(0,0,0,0.85))
+    drop-shadow(0  0  18px rgba(200,129,58,0.25));
+}
+
+#hero-food-card:hover .hfc-border {
+  filter:
+    drop-shadow(0 2px 0 #7A4820)
+    drop-shadow(0 4px 0 #5A3010)
+    drop-shadow(0 6px 0 #3A1E08)
+    drop-shadow(0 20px 40px rgba(0,0,0,0.9))
+    drop-shadow(0  0  28px rgba(200,129,58,0.50));
+}
+
+/* ── Inner face ── */
+.hfc-inner {
+  width: 218px;
+  background: linear-gradient(160deg, #1A1006 0%, #0E0804 60%, #160F05 100%);
+  clip-path: var(--hfc-clip);
+  overflow: hidden;
+  padding-bottom: 18px;
+  position: relative;
+}
+
+/* Bevel highlight — top-left edge catch */
+.hfc-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(135deg,
+    rgba(255,200,80,0.10) 0%,
+    transparent 40%);
+  pointer-events: none;
+  z-index: 3;
+}
+
+.hfc-glow {
+  position: absolute;
+  inset: -30px;
+  background: radial-gradient(ellipse at 50% 35%, rgba(200,129,58,0.20) 0%, transparent 65%);
+  pointer-events: none;
+  z-index: 0;
+}
+
+#hfc-canvas {
+  display: block;
+  width: 218px;
+  height: 218px;
+  position: relative;
+  z-index: 1;
+}
+
+/* Corner rune marks */
+.hfc-badge {
+  position: absolute;
+  top: 14px;
+  right: 16px;
+  font-size: 8px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(200,129,58,0.75);
+  background: rgba(200,129,58,0.08);
+  border: 1px solid rgba(200,129,58,0.22);
+  padding: 3px 7px;
+  /* angled badge corners */
+  clip-path: polygon(6px 0, 100% 0, 100% calc(100% - 6px), calc(100% - 6px) 100%, 0 100%, 0 6px);
+  z-index: 4;
+}
+
+.hfc-body {
+  padding: 4px 18px 2px;
+  position: relative;
+  z-index: 2;
+}
+
+.hfc-ojibwe {
+  font-size: 10px;
+  letter-spacing: 0.10em;
+  color: rgba(200,129,58,0.65);
+  margin: 0 0 2px;
+  font-style: italic;
+}
+
+.hfc-en {
+  font-size: 19px;
+  font-weight: 800;
+  color: #F5E8CC;
+  margin: 0;
+  line-height: 1.15;
+  text-shadow: 0 1px 8px rgba(200,129,58,0.4);
+}
+
+/* Angled game-style button */
+.hfc-btn {
+  display: block;
+  width: calc(100% - 32px);
+  margin: 10px 16px 0;
+  padding: 9px 0;
+  background: rgba(200,129,58,0.13);
+  border: none;
+  color: rgba(245,176,74,0.9);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  cursor: pointer;
+  position: relative;
+  z-index: 2;
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  transition: background 0.15s, color 0.15s;
+  outline: none;
+}
+
+.hfc-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-top: 1px solid rgba(200,129,58,0.4);
+  border-bottom: 1px solid rgba(200,129,58,0.4);
+  clip-path: polygon(8px 0, 100% 0, calc(100% - 8px) 100%, 0 100%);
+  pointer-events: none;
+}
+
+.hfc-btn:hover {
+  background: rgba(200,129,58,0.28);
+  color: #FFD980;
+}
+
+@media (max-width: 768px) {
+  #hero-food-card { display: none; }
+}

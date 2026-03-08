@@ -58,9 +58,20 @@ const AkiApp = (() => {
     // Screen-specific side effects
     if (screenName === 'ar') _onShowAR();
     if (screenName === 'ar') return; // CookingAR already mounted by renderDetection
+
+    // Mount Hero3D village scene when showing splash
+    if (screenName === 'splash' && window.Hero3d) {
+      requestAnimationFrame(() => Hero3d.mount());
+    }
+    // Unmount Hero3D (and ImmersiveEntry) when leaving splash
+    if (screenName !== 'splash') {
+      if (window.Hero3d)        Hero3d.unmount();
+      if (window.HeroFoodCard)  HeroFoodCard.unmount();
+      if (window.ImmersiveEntry) ImmersiveEntry.unmount();
+    }
   }
 
-  // ── AR: ensure CookingAR is mounted when AR screen is shown ───────────────
+  // ── AR: ensure CookingAR is mounted when AR screen is shown ───────────────────
   function _onShowAR() {
     const viewport = document.getElementById('ar-viewport');
     const img      = document.getElementById('detect-img');
@@ -130,16 +141,14 @@ const AkiApp = (() => {
     // Splash
     $('btn-start-scan')?.addEventListener('click', () => goTo('nation'));
     $('btn-explore-recipes')?.addEventListener('click', () => goTo('recipe'));
-    $('btn-3d-kitchen')?.addEventListener('click', () => {
+    // "Enter Immersive 3D Kitchen" — primary CTA, goes straight to 3D kitchen demo
+    $('btn-xr-entry')?.addEventListener('click', () => {
+      if (window.ImmersiveEntry) ImmersiveEntry.unmount();
       goTo('kitchen3d');
       requestAnimationFrame(() => {
         const container = document.getElementById('kitchen3d-container');
         if (container && window.launchDemoKitchen) window.launchDemoKitchen(container);
       });
-    });
-    $('btn-3d-kitchen-upload')?.addEventListener('click', () => {
-      state.mode3d = true;
-      document.getElementById('file-input')?.click();
     });
 
     // Nation
@@ -163,8 +172,11 @@ const AkiApp = (() => {
     });
     $('ar-btn-story')?.addEventListener('click', () => goTo('story'));
 
-    // 3D Kitchen
-    $('btn-kitchen3d-back')?.addEventListener('click', () => goTo('splash'));
+    // 3D Kitchen — destroy CookingGuide overlay before going back (prevents state leak)
+    $('btn-kitchen3d-back')?.addEventListener('click', () => {
+      if (window.CookingGuide) CookingGuide.destroy();
+      goTo('splash');
+    });
 
     // Word screen
     $('btn-word-scan')?.addEventListener('click', () => {
@@ -245,12 +257,19 @@ const AkiApp = (() => {
     const nav = document.getElementById('bottom-nav');
     if (nav) nav.style.display = 'none';
 
-    // Start on splash
+    // Start on splash, then mount the Hero3D village scene
     goTo('splash');
+    // Slight delay so Three.js (loaded before app.js) is fully ready
+    setTimeout(() => {
+      if (window.Hero3d)       Hero3d.mount();
+      if (window.HeroFoodCard) HeroFoodCard.mount();
+    }, 150);
   }
 
   // Wait for DOM
   document.addEventListener('DOMContentLoaded', init);
+
+
 
   return { goTo, state, speakText };
 })();

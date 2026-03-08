@@ -473,13 +473,24 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
       const btnRow = document.createElement('div');
       btnRow.style.cssText = 'display:flex;gap:8px;flex-wrap:wrap;';
 
-      // Launch in WebXR (or fullscreen fallback — works on all devices)
+      // Launch in WebXR — pulsing ring wrapper + smart capability label
+      const xrWrap = document.createElement('div');
+      xrWrap.className = 'xr-btn-wrap';
+      xrWrap.innerHTML = `
+        <svg class="xr-pulse-ring" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg">
+          <circle cx="30" cy="30" r="26" fill="none" stroke="#C8813A" stroke-width="2"
+            stroke-dasharray="163" stroke-dashoffset="0" opacity="0.6">
+            <animate attributeName="stroke-dashoffset" values="163;0;163" dur="2.4s" repeatCount="indefinite"/>
+            <animate attributeName="opacity" values="0.6;0.15;0.6" dur="2.4s" repeatCount="indefinite"/>
+          </circle>
+        </svg>`;
       const xrBtn = document.createElement('button');
-      xrBtn.textContent = 'Immersive View';
-      xrBtn.className = 'kitchen3d-btn';
-      xrBtn.style.background = 'rgba(200,160,80,0.35)';
+      xrBtn.id = 'btn-enter-xr';
+      xrBtn.innerHTML = '🥽 Immersive View';
+      xrBtn.className = 'kitchen3d-btn kitchen3d-btn--xr';
       xrBtn.addEventListener('click', () => launchWebXR());
-      btnRow.appendChild(xrBtn);
+      xrWrap.appendChild(xrBtn);
+      btnRow.appendChild(xrWrap);
 
       // Detect WebXR capability and update button label accordingly
       if (navigator.xr) {
@@ -487,12 +498,12 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
           navigator.xr.isSessionSupported('immersive-vr').catch(() => false),
           navigator.xr.isSessionSupported('immersive-ar').catch(() => false),
         ]).then(([vr, ar]) => {
-          if (vr)      xrBtn.textContent = 'Enter VR (WebXR)';
-          else if (ar) xrBtn.textContent = 'Enter AR (WebXR)';
-          else         xrBtn.textContent = 'Immersive Fullscreen';
+          if (vr)      xrBtn.innerHTML = '🥽 Enter VR (WebXR)';
+          else if (ar) xrBtn.innerHTML = '🥽 Enter AR (WebXR)';
+          else         xrBtn.innerHTML = '🥽 Immersive Fullscreen';
         });
       } else {
-        xrBtn.textContent = 'Immersive Fullscreen';
+        xrBtn.innerHTML = '🥽 Immersive Fullscreen';
       }
 
       // Unlock Camera

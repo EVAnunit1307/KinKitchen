@@ -39,6 +39,12 @@ const CookingAR = (() => {
   // Context data from Gemini analysis
   let _ctx = null; // { traditionalNames, culturalUses, recipes, nutritionNotes }
 
+  // ── Orbiting label sprites (REVEAL scene) ────────────────────────────────
+  let _orbitSprites  = [];   // THREE.Sprite objects
+  let _orbitAngles   = [];   // current angle per sprite
+  let _orbitLabels   = [];   // { text, color } — the content of each sprite
+  let _gyroAttached  = false;
+
   // ── Colour palette ───────────────────────────────────────────────────────────
   const PALETTE = [
     [['tomato','strawberry','cherry','raspberry','pepper'], 0xd32f2f],
@@ -272,6 +278,104 @@ const CookingAR = (() => {
     return { scene, camera, renderer };
   }
 
+  // ── Text sprite factory ───────────────────────────────────────────────────
+  function _makeOrbitSprite(text, hexColor) {
+    const cw = 400, ch = 96;
+    const cv  = document.createElement('canvas');
+    cv.width  = cw;
+    cv.height = ch;
+    const ctx = cv.getContext('2d');
+
+    // Pill background
+    ctx.fillStyle = 'rgba(15,10,4,0.82)';
+    _pillRect(ctx, 6, 6, cw - 12, ch - 12, 14);
+    ctx.fill();
+
+    // Border
+    ctx.strokeStyle = `#${hexColor.toString(16).padStart(6,'0')}`;
+    ctx.lineWidth = 2.5;
+    _pillRect(ctx, 6, 6, cw - 12, ch - 12, 14);
+    ctx.stroke();
+
+    // Text
+    ctx.fillStyle = '#F5ECD7';
+    ctx.font = 'bold 28px \'Playfair Display\', Georgia, serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(text, cw / 2, ch / 2);
+
+    const tex = new THREE.CanvasTexture(cv);
+    const mat = new THREE.SpriteMaterial({ map: tex, transparent: true, depthTest: false, opacity: 0 });
+    const spr = new THREE.Sprite(mat);
+    spr.scale.set(1.0, 0.24, 1);
+    return spr;
+  }
+
+  function _pillRect(ctx, x, y, w, h, r) {
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.lineTo(x + w - r, y);
+    ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+    ctx.lineTo(x + w, y + h - r);
+    ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+    ctx.lineTo(x + r, y + h);
+    ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+    ctx.lineTo(x, y + r);
+    ctx.quadraticCurveTo(x, y, x + r, y);
+    ctx.closePath();
+  }
+
+  function _buildOrbitSprites(pos) {
+    // Clear old
+    _orbitSprites.forEach(s => { if (_threeScene) _threeScene.remove(s); });
+    _orbitSprites = [];
+    _orbitAngles  = [];
+    _orbitLabels  = [];
+
+    const names  = _ctx?.indigenousContext?.traditionalNames;
+    const uses   = _ctx?.indigenousContext?.culturalUses;
+    const nation = names?.[0]?.nation || '';
+    const ojibwe = names?.[0]?.name   || '';
+    const use    = uses?.[0]          || '';
+
+    const defs = [
+      { text: ojibwe || 'Traditional name',   color: 0xF5B04A },
+      { text: nation || 'Indigenous nation',   color: 0x7EC8A0 },
+      { text: use    || 'Cultural ingredient', color: 0xC8813A },
+    ].filter(d => d.text);
+
+    defs.forEach((d, i) => {
+      const spr = _makeOrbitSprite(d.text, d.color);
+      spr.position.set(pos.x, pos.y + 0.55, 0);
+      if (_threeScene) _threeScene.add(spr);
+      _orbitSprites.push(spr);
+      _orbitAngles.push((i / defs.length) * Math.PI * 2);
+      _orbitLabels.push(d);
+    });
+  }
+
+  function _tickOrbitSprites(t, pos) {
+    const RADIUS = 1.0;
+    const SPEED  = 0.55;
+    _orbitSprites.forEach((spr, i) => {
+      _orbitAngles[i] += SPEED * (t === 0 ? 0.016 : 0.016); // incremental — called every frame
+      const a = _orbitAngles[i];
+      spr.position.set(
+        pos.x + RADIUS * Math.cos(a),
+        pos.y + 0.55 + 0.12 * Math.sin(a * 1.3),
+        RADIUS * Math.sin(a)
+      );
+      // Fade in during REVEAL
+      const tFadeIn = Math.min(1, (Date.now() / 1000 - _sceneT0 / 1000) / 1.2);
+      spr.material.opacity = tFadeIn * (0.7 + 0.3 * Math.sin(a + i));
+    });
+  }
+
+  function _removeOrbitSprites() {
+    _orbitSprites.forEach(s => { if (_threeScene) _threeScene.remove(s); });
+    _orbitSprites = [];
+  }
+
   // ── Overlay (HTML) – fades in contextual text over the canvas ───────────
   function buildOverlay(wrapperEl) {
     const el = document.createElement('div');
@@ -366,15 +470,23 @@ const CookingAR = (() => {
 
   // ── SCENE 2: REVEAL ───────────────────────────────────────────────────────
   // Camera orbits 30° over 2s. Ingredient rotates. Name badge shown.
+  // Orbiting Ojibwe text sprites are animated here.
   function tickReveal(t) {
     const ORBIT_DUR = 2.0;
     const angle = lerp(0, Math.PI / 6, Math.min(t / ORBIT_DUR, 1));
     const radius = 3.4;
-    _camera.position.x = Math.sin(angle) * radius;
-    _camera.position.z = Math.cos(angle) * radius;
-    _camera.lookAt(0, 0.1, 0);
+
+    // Only drive camera position if GyroCamera is not attached
+    if (!_gyroAttached) {
+      _camera.position.x = Math.sin(angle) * radius;
+      _camera.position.z = Math.cos(angle) * radius;
+      _camera.lookAt(0, 0.1, 0);
+    }
 
     if (_ingredientRef) _ingredientRef.rotation.y += 0.007;
+
+    // Drive orbiting label sprites
+    if (_worldPos) _tickOrbitSprites(t, _worldPos);
 
     if (t > 3.8) advanceScene('PREPARATION');
   }
@@ -534,6 +646,23 @@ const CookingAR = (() => {
       // Build HTML overlay
       buildOverlay(wrapperEl);
 
+      // Build orbit sprites (need ctx data)
+      _buildOrbitSprites(pos);
+
+      // Attach gyro/mouse parallax camera for REVEAL scene
+      if (window.GyroCamera) {
+        GyroCamera.attach(_camera, {
+          strength: 0.22,
+          smoothing: 0.038,
+          basePos: { x: 0, y: 1.8, z: 3.4 },
+          lookAt:  { x: 0, y: 0.1, z: 0 },
+        });
+        _gyroAttached = true;
+      }
+
+      // Tap on canvas to speak the nearest orbit label
+      wrapperEl.addEventListener('click', _onARTap, { once: false });
+
       _clearSpinner();
 
       // Start scene engine at ARRIVAL
@@ -574,12 +703,30 @@ const CookingAR = (() => {
     }
   }
 
+  // ── AR canvas tap → speak nearest label ──────────────────────────────────
+  function _onARTap() {
+    if (_orbitLabels.length === 0) return;
+    // Find the sprite most facing the camera (largest z in camera space → closest angle to 0/2π)
+    let bestIdx = 0;
+    let bestZ   = -Infinity;
+    _orbitSprites.forEach((spr, i) => {
+      if (spr.position.z > bestZ) { bestZ = spr.position.z; bestIdx = i; }
+    });
+    const label = _orbitLabels[bestIdx];
+    if (label && window.AkiApp) {
+      const audio = document.getElementById('detect-audio');
+      if (audio) AkiApp.speakText(label.text, audio);
+    }
+  }
+
   // ── Public: unmount ───────────────────────────────────────────────────────
   function unmount() {
     if (_animId)    { cancelAnimationFrame(_animId); _animId = null; }
     if (_renderer)  { _renderer.dispose(); _renderer = null; }
     if (_canvas)    { _canvas.remove(); _canvas = null; }
     if (_overlayEl) { _overlayEl.remove(); _overlayEl = null; }
+    _removeOrbitSprites();
+    if (window.GyroCamera && _gyroAttached) { GyroCamera.detach(); _gyroAttached = false; }
     _ingredientRef = null;
     _knifeRef      = null;
     _threeScene    = null;

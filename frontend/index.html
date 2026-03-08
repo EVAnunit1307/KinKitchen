@@ -17,126 +17,103 @@
 
 <div class="screens" id="app">
 
-  <!-- ── SCREEN 1: SPLASH ── -->
-  <div class="screen screen-splash" data-screen="splash">
-    <div class="splash-texture"></div>
-    <div class="splash-geo"></div>
-    <div class="splash-content">
-      <div class="title-card-3d" id="title-card-3d">
-        <div class="title-card-3d__shine"></div>
-        <div class="title-card-3d__geo"></div>
-        <div class="aki-wordmark">Aki</div>
-        <div class="aki-subtitle">Ojibwe · Earth · Land</div>
-        <p class="splash-tagline">Your kitchen is a doorway back to the land.</p>
-      </div>
-      <button class="btn-primary" id="btn-start-scan">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-        What's in your kitchen?
-      </button>
-      <button class="btn-primary" id="btn-3d-kitchen" style="margin-top:12px; background:rgba(255,255,255,0.12); border:1.5px solid var(--ochre); justify-content:center; width:100%;">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
-        Enter 3D Kitchen (Demo)
-      </button>
-      <p class="btn-ghost" id="btn-3d-kitchen-upload" style="margin-top:4px;font-size:12px;">or scan your own ingredients in 3D →</p>
-      <p class="btn-ghost" id="btn-explore-recipes">or explore recipes →</p>
+  <!-- ── SCREEN 1: SPLASH — Hero3D layout ── -->
+  <div class="screen screen-splash hero-splash" data-screen="splash">
+
+    <!-- 3D canvas injected here by hero3d.js -->
+
+    <!-- Loading pulse — shown while the village GLB is fetching, fades out after -->
+    <div id="hero3d-loader" class="hero-loader" aria-hidden="true">
+      <span></span><span></span><span></span>
     </div>
 
-  <!-- ── POWERED BY LOGO CLOUD ── -->
-  <div class="logo-cloud">
-    <p class="logo-cloud__label">Powered by</p>
-    <div class="logo-slider-wrap">
+    <!-- Edge vignette — dark radial gradient that frames the 3D and boosts depth -->
+    <div class="hero-vignette" aria-hidden="true"></div>
 
-      <!-- Track is duplicated for a seamless, gapless infinite loop -->
-      <div class="logo-slider-track" aria-hidden="true">
+    <!-- Grain overlay (matches Hero3D.tsx hero-board-grain) -->
+    <div class="hero-grain" aria-hidden="true"></div>
 
-        <!-- ─ set A ─ -->
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/googlegemini/C8813A" alt="Google Gemini" loading="lazy">
-          <span>Gemini</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/elevenlabs/E8A55A" alt="ElevenLabs" loading="lazy">
-          <span>ElevenLabs</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/cloudinary/C8813A" alt="Cloudinary" loading="lazy">
-          <span>Cloudinary</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/threedotjs/E8A55A" alt="Three.js" loading="lazy">
-          <span>Three.js</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/huggingface/C8813A" alt="Hugging Face" loading="lazy">
-          <span>Hugging Face</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/nodedotjs/E8A55A" alt="Node.js" loading="lazy">
-          <span>Node.js</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/express/C8813A" alt="Express" loading="lazy">
-          <span>Express</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/google/E8A55A" alt="model-viewer" loading="lazy">
-          <span>model-viewer</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/multer/C8813A" alt="Multer" loading="lazy" onerror="this.style.display='none'">
-          <span>Multer</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/webgl/E8A55A" alt="WebGL" loading="lazy">
-          <span>WebGL</span>
-        </span>
+    <!-- Left content panel -->
+    <div class="hero-content">
+      <!-- Brand header -->
+      <div class="hero-brand">
+        <span class="hero-brand__name">Aki</span>
+        <span class="hero-brand__dot">·</span>
+        <span class="hero-brand__sub">Ojibwe · Earth · Land</span>
+      </div>
 
-        <!-- ─ set B (duplicate for seamless loop) ─ -->
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/googlegemini/C8813A" alt="" loading="lazy">
-          <span>Gemini</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/elevenlabs/E8A55A" alt="" loading="lazy">
-          <span>ElevenLabs</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/cloudinary/C8813A" alt="" loading="lazy">
-          <span>Cloudinary</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/threedotjs/E8A55A" alt="" loading="lazy">
-          <span>Three.js</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/huggingface/C8813A" alt="" loading="lazy">
-          <span>Hugging Face</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/nodedotjs/E8A55A" alt="" loading="lazy">
-          <span>Node.js</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/express/C8813A" alt="" loading="lazy">
-          <span>Express</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/google/E8A55A" alt="" loading="lazy">
-          <span>model-viewer</span>
-        </span>
-        <span class="logo-item">
-          <img src="https://cdn.simpleicons.org/webgl/E8A55A" alt="" loading="lazy">
-          <span>WebGL</span>
-        </span>
+      <!-- Main title block -->
+      <div class="hero-title-wrap">
+        <h1 class="hero-title">
+          Reconnect with<br>
+          <span class="hero-title--em">ancestral food</span>
+        </h1>
+        <p class="hero-subtitle">
+          Your kitchen is a doorway back to the land.
+        </p>
+      </div>
 
-      </div><!-- /.logo-slider-track -->
+      <p class="hero-subtext">
+        Scan ingredients &rarr; discover Ojibwe names, origin nations, and traditional recipes — in 3D &amp; VR.
+      </p>
 
-      <!-- Progressive blur edges — pure CSS, no JS -->
-      <div class="logo-blur logo-blur--left"  aria-hidden="true"></div>
-      <div class="logo-blur logo-blur--right" aria-hidden="true"></div>
-    </div><!-- /.logo-slider-wrap -->
-  </div><!-- /.logo-cloud -->
+      <!-- CTAs -->
+      <div class="hero-ctas">
+        <button class="hero-btn-primary" id="btn-xr-entry">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/><path d="M7 8V6a5 5 0 0 1 10 0v2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/></svg>
+          Enter Immersive Kitchen
+        </button>
+        <button class="hero-btn-secondary" id="btn-start-scan">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
+          Scan your kitchen
+        </button>
+      </div>
+
+      <!-- Ghost link -->
+      <p class="hero-ghost" id="btn-explore-recipes">or explore recipes &rarr;</p>
+    </div><!-- /.hero-content -->
+
+    <!-- Floating coords — top right (matches Hero3D.tsx hero-board-coords) -->
+    <div class="hero-coords" aria-hidden="true">
+      <div class="hero-coords__line">TERRITORY: ANISHINAABE</div>
+      <div class="hero-coords__line hero-coords__line--highlight">46.4954° N · 84.3476° W</div>
+    </div>
+
+    <!-- Powered by logo cloud -->
+    <div class="logo-cloud hero-logo-cloud">
+      <p class="logo-cloud__label">Powered by</p>
+      <div class="logo-slider-wrap">
+        <!-- Track is duplicated for a seamless, gapless infinite loop -->
+        <div class="logo-slider-track" aria-hidden="true">
+          <!-- ─ set A ─ -->
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/googlegemini/C8813A" alt="Google Gemini" loading="lazy"><span>Gemini</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/elevenlabs/E8A55A" alt="ElevenLabs" loading="lazy"><span>ElevenLabs</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/cloudinary/C8813A" alt="Cloudinary" loading="lazy"><span>Cloudinary</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/threedotjs/E8A55A" alt="Three.js" loading="lazy"><span>Three.js</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/huggingface/C8813A" alt="Hugging Face" loading="lazy"><span>Hugging Face</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/nodedotjs/E8A55A" alt="Node.js" loading="lazy"><span>Node.js</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/express/C8813A" alt="Express" loading="lazy"><span>Express</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/google/E8A55A" alt="model-viewer" loading="lazy"><span>model-viewer</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/webgl/E8A55A" alt="WebGL" loading="lazy"><span>WebGL</span></span>
+          <!-- ─ set B (duplicate for seamless loop) ─ -->
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/googlegemini/C8813A" alt="" loading="lazy"><span>Gemini</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/elevenlabs/E8A55A" alt="" loading="lazy"><span>ElevenLabs</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/cloudinary/C8813A" alt="" loading="lazy"><span>Cloudinary</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/threedotjs/E8A55A" alt="" loading="lazy"><span>Three.js</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/huggingface/C8813A" alt="" loading="lazy"><span>Hugging Face</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/nodedotjs/E8A55A" alt="" loading="lazy"><span>Node.js</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/express/C8813A" alt="" loading="lazy"><span>Express</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/google/E8A55A" alt="" loading="lazy"><span>model-viewer</span></span>
+          <span class="logo-item"><img src="https://cdn.simpleicons.org/webgl/E8A55A" alt="" loading="lazy"><span>WebGL</span></span>
+        </div><!-- /.logo-slider-track -->
+        <div class="logo-blur logo-blur--left"  aria-hidden="true"></div>
+        <div class="logo-blur logo-blur--right" aria-hidden="true"></div>
+      </div><!-- /.logo-slider-wrap -->
+    </div><!-- /.logo-cloud -->
+
   </div><!-- /.screen-splash -->
+
+
 
   <!-- ── SCREEN 2: NATION SELECTION ── -->
   <div class="screen screen-nation" data-screen="nation">
@@ -145,6 +122,8 @@
       <h2 class="screen-title">Which nation are you connected to?</h2>
       <p class="screen-desc">This helps us share teachings and recipes from your specific land and community.</p>
     </div>
+
+    <!-- 3D Nation Map removed — was causing black box rendering issue -->
 
     <div class="nation-grid" id="nation-grid">
       <div class="nation-card glowing-card selected" data-nation="Anishinaabe" data-region="Great Lakes">
@@ -468,6 +447,8 @@
 
 </div><!-- /.screens -->
 
+<!-- WebXR Polyfill (cross-browser coverage) -->
+<script src="https://cdn.jsdelivr.net/npm/webxr-polyfill@latest/build/webxr-polyfill.min.js"></script>
 <!-- Scripts -->
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/build/three.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/controls/OrbitControls.js"></script>
@@ -475,9 +456,15 @@
 <script src="https://cdn.jsdelivr.net/npm/three@0.134.0/examples/js/loaders/GLTFLoader.js"></script>
 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/4.0.0/model-viewer.min.js"></script>
   <script src="js/utils.js"></script>
+<script src="js/gyroCamera.js"></script>
+<script src="js/immersiveEntry.js"></script>
+<script src="js/nationMap3d.js"></script>
+<script src="js/hero3d.js"></script>
+<script src="js/heroFoodCard.js"></script>
 <script src="js/ar.js"></script>
 <script src="js/glow.js"></script>
 <script src="js/app.js"></script>
+
 <script src="js/upload.js"></script>
   <script src="js/render.js"></script>
 <script src="js/ingredientPositions.js"></script>
@@ -489,3 +476,4 @@
 <script src="js/tiltCard.js"></script>
 </body>
 </html>
+
