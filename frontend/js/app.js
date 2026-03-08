@@ -4,7 +4,8 @@
 /**
  * app.js — Aki screen navigation + app-level state machine
  *
- * Screens:  splash → nation → upload → detect → recipe → ar → story → word
+ * Flow: splash → nation → upload → detect → recipe → kitchen3d → story
+ *
  * State is kept in AkiApp.state. All screens read from and write to this.
  */
 const AkiApp = (() => {
@@ -12,16 +13,15 @@ const AkiApp = (() => {
   const state = {
     selectedNation: 'Anishinaabe',
     uploadData:     null,   // raw API response from /api/upload
-    mode3d:         false,  // when true, upload goes straight to 3D kitchen
     activeRecipe:   null,   // { recipe, score, matchedIngredients }
     currentScreen:  'splash',
   };
 
   // ── Screen map ─────────────────────────────────────────────────────────────
-  const SCREENS = ['splash','nation','upload','detect','recipe','ar','story','word','kitchen3d'];
+  const SCREENS = ['splash','upload','detect','recipe','kitchen3d','story','word','ar'];
 
   // Screens that show the bottom nav
-  const NAV_SCREENS = new Set(['upload','detect','recipe','ar','story','word']);
+  const NAV_SCREENS = new Set(['upload','detect','recipe','story','word']);
 
   // ── Navigate ───────────────────────────────────────────────────────────────
   function goTo(screenName) {
@@ -37,76 +37,65 @@ const AkiApp = (() => {
     const next = document.querySelector(`[data-screen="${screenName}"]`);
     if (next) {
       next.classList.add('screen--active');
-      // Scroll to top of new screen
       next.scrollTop = 0;
     }
 
     state.currentScreen = screenName;
 
-    // Rescan for any new .glowing-card elements added by render.js
     if (window.GlowingEffect) GlowingEffect.rescan();
 
-    // Bottom nav visibility
+    // Bottom nav
     const nav = document.getElementById('bottom-nav');
     if (nav) nav.style.display = NAV_SCREENS.has(screenName) ? 'flex' : 'none';
 
-    // Update bottom nav active state
     document.querySelectorAll('.nav-item').forEach(item => {
       item.classList.toggle('active', item.dataset.nav === screenName);
     });
 
-    // Screen-specific side effects
-    if (screenName === 'ar') _onShowAR();
-    if (screenName === 'ar') return; // CookingAR already mounted by renderDetection
-
-    // Mount Hero3D village scene when showing splash
-    if (screenName === 'splash' && window.Hero3d) {
-      requestAnimationFrame(() => Hero3d.mount());
-    }
-    // Unmount Hero3D (and ImmersiveEntry) when leaving splash
-    if (screenName !== 'splash') {
-      if (window.Hero3d)        Hero3d.unmount();
-      if (window.HeroFoodCard)  HeroFoodCard.unmount();
+    // ── Screen side-effects ────────────────────────────────────────────────
+    if (screenName === 'splash') {
+      requestAnimationFrame(() => {
+        if (window.Hero3d)       Hero3d.mount();
+        if (window.HeroFoodCard) HeroFoodCard.mount();
+      });
+    } else {
+      if (window.Hero3d)         Hero3d.unmount();
+      if (window.HeroFoodCard)   HeroFoodCard.unmount();
       if (window.ImmersiveEntry) ImmersiveEntry.unmount();
+    }
+
+    // Auto-narrate the story screen via ElevenLabs when it becomes active
+    if (screenName === 'story') {
+      setTimeout(() => {
+        const body  = $('story-body')?.textContent?.trim();
+        const audio = $('story-audio');
+        if (body && body !== '–') speakText(body, audio);
+        // Show audio chip once narration is triggered
+        const chip = $('story-audio-chip');
+        if (chip) chip.style.display = '';
+      }, 600); // small delay so screen transition finishes first
     }
   }
 
-  // ── AR: ensure CookingAR is mounted when AR screen is shown ───────────────────
-  function _onShowAR() {
-    const viewport = document.getElementById('ar-viewport');
-    const img      = document.getElementById('detect-img');
-    if (!viewport || !img || !state.uploadData) return;
+  // ── Launch 3D kitchen with current upload data ────────────────────────────
+  function _launchKitchen3d() {
+    goTo('kitchen3d');
+    requestAnimationFrame(() => {
+      const container = document.getElementById('kitchen3d-container');
+      const data      = state.uploadData;
+      if (!container || !data || !window.handleGenerate3d) return;
 
-    const data = state.uploadData;
-
-    // Pick best detection
-    let detection = null;
-    if (data.boundingBoxes?.length) detection = data.boundingBoxes[0];
-    if (!detection) {
-      const foods = data.contentAnalysis?.foodDetected;
-      const first = Array.isArray(foods) && foods.length
-        ? (typeof foods[0] === 'object' ? foods[0].label : foods[0]) : null;
-      if (first) detection = { name: first, x: 0.1, y: 0.1, w: 0.8, h: 0.8, confidence: 1 };
-    }
-    if (!detection) {
-      const obj = data.analysis?.detectedObjects?.[0] || 'ingredient';
-      detection = { name: obj, x: 0.1, y: 0.1, w: 0.8, h: 0.8, confidence: 1 };
-    }
-
-    const contextData = data.analysis ? {
-      indigenousContext: data.analysis.indigenousContext || null,
-      recipes:           data.analysis.recipes           || [],
-      nutritionNotes:    data.analysis.nutritionNotes    || null,
-    } : null;
-
-    if (window.CookingAR) CookingAR.mount(viewport, img, detection, contextData);
-
-    // Update AR card label
-    const label = document.getElementById('ar-step-label');
-    const text  = document.getElementById('ar-step-text');
-    if (label) label.textContent = `Storyboard — ${detection.name}`;
-    if (text)  text.textContent  = 'Watch the 4-scene storyboard: Arrival → Reveal → Preparation → Story.';
-    viewport.classList.add('ar-ready');
+      const bboxes = data.boundingBoxes || [];
+      if (!bboxes.length && data.contentAnalysis?.foodDetected?.length) {
+        const presetBoxes = data.contentAnalysis.foodDetected.map(f => ({
+          name:       typeof f === 'object' ? f.label : f,
+          confidence: f.confidence || 1,
+        }));
+        window.handleGenerate3d(data.url || '', presetBoxes, container, data.publicId || null);
+      } else {
+        window.handleGenerate3d(data.url || '', bboxes, container, data.publicId || null);
+      }
+    });
   }
 
   // ── Nation selection ───────────────────────────────────────────────────────
@@ -127,10 +116,11 @@ const AkiApp = (() => {
     document.querySelectorAll('.nav-item[data-nav]').forEach(item => {
       item.addEventListener('click', () => {
         const target = item.dataset.nav;
-        // Only allow nav to screens we've visited (have data for)
-        if (target === 'recipe' && !state.uploadData) { goTo('upload'); return; }
-        if (target === 'story'  && !state.uploadData) { goTo('upload'); return; }
-        if (target === 'ar'     && !state.uploadData) { goTo('upload'); return; }
+        // Guard: require upload data for data-dependent screens
+        if ((target === 'recipe' || target === 'story') && !state.uploadData) {
+          goTo('upload');
+          return;
+        }
         goTo(target);
       });
     });
@@ -138,61 +128,77 @@ const AkiApp = (() => {
 
   // ── Wire all static buttons ────────────────────────────────────────────────
   function initButtons() {
-    // Splash
-    $('btn-start-scan')?.addEventListener('click', () => goTo('nation'));
-    $('btn-explore-recipes')?.addEventListener('click', () => goTo('recipe'));
-    // "Enter Immersive 3D Kitchen" — primary CTA, goes straight to 3D kitchen demo
-    $('btn-xr-entry')?.addEventListener('click', () => {
-      if (window.ImmersiveEntry) ImmersiveEntry.unmount();
-      goTo('kitchen3d');
-      requestAnimationFrame(() => {
-        const container = document.getElementById('kitchen3d-container');
-        if (container && window.launchDemoKitchen) window.launchDemoKitchen(container);
-      });
+    // ── Splash ──────────────────────────────────────────────────────────────
+    // Single entry point: scan your kitchen
+    $('btn-start-scan')?.addEventListener('click', () => goTo('upload'));
+
+    // ── Upload ───────────────────────────────────────────────────────────────
+    $('btn-upload-back')?.addEventListener('click', () => goTo('splash'));
+    $('btn-upload-retry')?.addEventListener('click', () => {
+      // Hide error + retry button, re-trigger file input
+      const errEl   = $('upload-error');
+      const retryEl = $('btn-upload-retry');
+      if (errEl)   { errEl.textContent = ''; errEl.style.display = 'none'; }
+      if (retryEl) retryEl.style.display = 'none';
+      document.getElementById('file-input')?.click();
     });
 
-    // Nation
-    $('btn-nation-continue')?.addEventListener('click', () => goTo('upload'));
-    $('btn-nation-skip')?.addEventListener('click',     () => {
-      state.selectedNation = 'All';
-      goTo('upload');
-    });
-
-    // Detection
+    // ── Detection ────────────────────────────────────────────────────────────
     $('btn-find-recipes')?.addEventListener('click', () => goTo('recipe'));
     $('btn-scan-more')?.addEventListener('click', () => {
       if (window.CookingAR) CookingAR.unmount();
       goTo('upload');
     });
 
-    // AR
-    $('ar-btn-back')?.addEventListener('click', () => {
-      if (window.CookingAR) CookingAR.unmount();
-      goTo('recipe');
+    // ── Recipe → 3D Kitchen ───────────────────────────────────────────────
+    $('btn-enter-kitchen3d')?.addEventListener('click', () => {
+      if (state.uploadData) _launchKitchen3d();
+      else goTo('upload');
     });
-    $('ar-btn-story')?.addEventListener('click', () => goTo('story'));
 
-    // 3D Kitchen — destroy CookingGuide overlay before going back (prevents state leak)
+    // ── 3D Kitchen ───────────────────────────────────────────────────────────
     $('btn-kitchen3d-back')?.addEventListener('click', () => {
       if (window.CookingGuide) CookingGuide.destroy();
-      goTo('splash');
+      goTo('recipe');
+    });
+    $('btn-kitchen3d-story')?.addEventListener('click', () => {
+      if (window.CookingGuide) CookingGuide.destroy();
+      goTo('story');
     });
 
-    // Word screen
+    // ── Story ────────────────────────────────────────────────────────────────
+    $('btn-story-restart')?.addEventListener('click', () => {
+      state.uploadData  = null;
+      state.activeRecipe = null;
+      goTo('upload');
+    });
+
+    // ── Word screen ──────────────────────────────────────────────────────────
     $('btn-word-scan')?.addEventListener('click', () => {
       if (window.CookingAR) CookingAR.unmount();
       goTo('upload');
     });
+
+    // ── AR (kept for bottom-nav / legacy) ────────────────────────────────────
+    $('ar-btn-back')?.addEventListener('click', () => {
+      if (window.CookingAR) CookingAR.unmount();
+      goTo('recipe');
+    });
+    $('ar-btn-story')?.addEventListener('click', () => {
+      // Fix: unmount CookingAR before leaving AR to prevent memory leak
+      if (window.CookingAR) CookingAR.unmount();
+      goTo('story');
+    });
   }
 
-  // ── TTS helper — plays audio from /api/story or ElevenLabs ────────────────
+  // ── TTS helper — ElevenLabs via /api/story/speak ──────────────────────────
   async function speakText(text, audioEl) {
     if (!text || !audioEl) return;
     try {
       const res = await fetch('/api/story/speak', {
-        method: 'POST',
+        method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text }),
+        body:    JSON.stringify({ text }),
       });
       if (!res.ok) throw new Error('TTS failed');
       const blob = await res.blob();
@@ -211,7 +217,7 @@ const AkiApp = (() => {
       if (ojibwe && ojibwe !== '–') speakText(ojibwe, $('detect-audio'));
     });
 
-    // Story screen
+    // Story screen: manual replay
     $('story-play-btn')?.addEventListener('click', () => {
       const body = $('story-body')?.textContent?.trim();
       if (body) speakText(body, $('story-audio'));
@@ -234,10 +240,13 @@ const AkiApp = (() => {
     });
   }
 
-  // ── Step "Watch in AR" buttons ────────────────────────────────────────────
-  function initARStepBtns() {
+  // ── Step buttons now route to 3D kitchen (not AR) ─────────────────────────
+  function initStepBtns() {
     document.getElementById('recipe-steps')?.addEventListener('click', e => {
-      if (e.target.closest('.step-ar-btn')) goTo('ar');
+      if (e.target.closest('.step-ar-btn')) {
+        if (state.uploadData) _launchKitchen3d();
+        else goTo('upload');
+      }
     });
   }
 
@@ -251,25 +260,21 @@ const AkiApp = (() => {
     initButtons();
     initAudioChips();
     initIngredientTap();
-    initARStepBtns();
+    initStepBtns();
 
     // Hide bottom nav on start
     const nav = document.getElementById('bottom-nav');
     if (nav) nav.style.display = 'none';
 
-    // Start on splash, then mount the Hero3D village scene
+    // Start on splash
     goTo('splash');
-    // Slight delay so Three.js (loaded before app.js) is fully ready
     setTimeout(() => {
       if (window.Hero3d)       Hero3d.mount();
       if (window.HeroFoodCard) HeroFoodCard.mount();
     }, 150);
   }
 
-  // Wait for DOM
   document.addEventListener('DOMContentLoaded', init);
-
-
 
   return { goTo, state, speakText };
 })();

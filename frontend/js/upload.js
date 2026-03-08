@@ -36,10 +36,12 @@
   }
 
   function showError(message) {
-    const el = document.getElementById('upload-error');
+    const el    = document.getElementById('upload-error');
+    const retry = document.getElementById('btn-upload-retry');
     if (!el) return;
     el.textContent   = message;
     el.style.display = message ? '' : 'none';
+    if (retry) retry.style.display = message ? '' : 'none';
     showProgress(false);
   }
 

@@ -59,18 +59,11 @@
 
       <!-- CTAs -->
       <div class="hero-ctas">
-        <button class="hero-btn-primary" id="btn-xr-entry">
-          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 8h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/><path d="M7 8V6a5 5 0 0 1 10 0v2"/><circle cx="9" cy="13" r="1.5"/><circle cx="15" cy="13" r="1.5"/></svg>
-          Enter Immersive Kitchen
-        </button>
-        <button class="hero-btn-secondary" id="btn-start-scan">
+        <button class="hero-btn-primary" id="btn-start-scan">
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/><circle cx="12" cy="13" r="4"/></svg>
-          Scan your kitchen
+          What's in your kitchen?
         </button>
       </div>
-
-      <!-- Ghost link -->
-      <p class="hero-ghost" id="btn-explore-recipes">or explore recipes &rarr;</p>
     </div><!-- /.hero-content -->
 
     <!-- Floating coords — top right (matches Hero3D.tsx hero-board-coords) -->
@@ -115,57 +108,11 @@
 
 
 
-  <!-- ── SCREEN 2: NATION SELECTION ── -->
-  <div class="screen screen-nation" data-screen="nation">
-    <div class="screen-header">
-      <div class="step-label">Step 1 of 2</div>
-      <h2 class="screen-title">Which nation are you connected to?</h2>
-      <p class="screen-desc">This helps us share teachings and recipes from your specific land and community.</p>
-    </div>
-
-    <!-- 3D Nation Map removed — was causing black box rendering issue -->
-
-    <div class="nation-grid" id="nation-grid">
-      <div class="nation-card glowing-card selected" data-nation="Anishinaabe" data-region="Great Lakes">
-        <div class="nation-card-dot"></div>
-        <div class="nation-card-name">Anishinaabe</div>
-        <div class="nation-card-region">Great Lakes</div>
-      </div>
-      <div class="nation-card glowing-card" data-nation="Haudenosaunee" data-region="Northeast">
-        <div class="nation-card-dot"></div>
-        <div class="nation-card-name">Haudenosaunee</div>
-        <div class="nation-card-region">Northeast</div>
-      </div>
-      <div class="nation-card glowing-card" data-nation="Cree" data-region="Northern Canada">
-        <div class="nation-card-dot"></div>
-        <div class="nation-card-name">Cree</div>
-        <div class="nation-card-region">Northern Canada</div>
-      </div>
-      <div class="nation-card glowing-card" data-nation="Métis" data-region="Prairies">
-        <div class="nation-card-dot"></div>
-        <div class="nation-card-name">Métis</div>
-        <div class="nation-card-region">Prairies</div>
-      </div>
-      <div class="nation-card glowing-card" data-nation="Coast Salish" data-region="Pacific Northwest">
-        <div class="nation-card-dot"></div>
-        <div class="nation-card-name">Coast Salish</div>
-        <div class="nation-card-region">Pacific Northwest</div>
-      </div>
-      <div class="nation-card glowing-card" data-nation="Other" data-region="All territories">
-        <div class="nation-card-dot"></div>
-        <div class="nation-card-name">Other / All</div>
-        <div class="nation-card-region">All territories</div>
-      </div>
-    </div>
-
-    <button class="btn-primary" id="btn-nation-continue" style="width:100%; justify-content:center;">Continue</button>
-    <p class="skip-link" id="btn-nation-skip">I'm not sure yet — show me everything</p>
-  </div>
-
-  <!-- ── SCREEN 3: UPLOAD ── -->
+  <!-- ── SCREEN 2: UPLOAD ── -->
   <div class="screen screen-upload" data-screen="upload">
     <div class="screen-header">
-      <div class="step-label">Step 2 of 2</div>
+      <button class="btn-back" id="btn-upload-back">← Back</button>
+      <div class=\"step-label\">Step 1 of 1</div>
       <h2 class="screen-title">What's in your kitchen?</h2>
       <p class="screen-desc">Take a photo or upload an image of your ingredients and we'll find recipes for you.</p>
     </div>
@@ -202,6 +149,7 @@
     <button class="btn-secondary" id="btn-camera-roll">Upload from camera roll</button>
 
     <div id="upload-error" class="aki-error" style="display:none" role="alert"></div>
+    <button class="btn-secondary" id="btn-upload-retry" style="display:none;width:100%;margin-top:12px;justify-content:center;">Try again</button>
   </div>
 
   <!-- ── SCREEN 4: DETECTION RESULT ── -->
@@ -305,6 +253,12 @@
         <div class="recipe-section-label">Cultural knowledge</div>
         <p id="recipe-cultural-text"></p>
       </div>
+
+      <!-- Primary CTA: enter 3D kitchen with selected recipe -->
+      <button class="btn-full btn-primary" id="btn-enter-kitchen3d" style="margin-top:24px;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:8px"><path d="M2 8h20v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V8z"/><path d="M7 8V6a5 5 0 0 1 10 0v2"/></svg>
+        Cook this in 3D
+      </button>
     </div>
   </div>
 
@@ -386,6 +340,10 @@
       <div class="story-attr-name" id="story-attr-name">–</div>
     </div>
     <p class="story-land" id="story-land"></p>
+
+    <button class="btn-full btn-secondary" id="btn-story-restart" style="margin-top:32px;">
+      Scan something new →
+    </button>
   </div>
 
   <!-- ── SCREEN 8: WORD OF THE DAY ── -->
@@ -421,7 +379,12 @@
     </div>
     <button class="ar-btn ar-btn-prev" id="btn-kitchen3d-back"
       style="position:absolute;bottom:24px;left:24px;z-index:10;">
-      ← Back
+      ← Back to recipe
+    </button>
+    <button class="btn-primary" id="btn-kitchen3d-story"
+      style="position:absolute;bottom:24px;right:24px;z-index:10;padding:12px 20px;">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin-right:6px"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>
+      Learn the origin story
     </button>
   </div>
 
