@@ -11,11 +11,16 @@ var INGREDIENT_POSITIONS = {
   tomato_3:  { x: -2.0000, y: 2.9922, z: -0.0636 },
   tomato_4:  { x: -1.7961, y: 2.9727, z: 0.3426 },
 
+  potato_1:           { x: -1.7433, y: 2.9802, z: -0.2553 },
+  potato_2:           { x: -1.5500, y: 2.9800, z: -0.4500 },
+  diced_potato_1:     { x: 0.0685,  y: 3.1045, z: -0.3929 },
+
   garlic_1:           { x: -1.2249, y: 3.1085, z: -0.2336 },
   garlic_2:           { x: -1.2885, y: 3.1127, z: -0.0101 },
 
   cabbage_1:          { x: 1.0,     y: 3.1,    z: 0.5    },
 
+  rice_1:             { x: -1.0500, y: 3.1500, z: 0.2000 },
   canned_beans_1:     { x: -1.5064, y: 3.2117, z: 0.5000 },
   onion_1:            { x: -1.2763, y: 2.9741, z: -0.6204 },
   butternut_squash_1: { x: -1.7433, y: 2.9802, z: -0.2553 },
@@ -31,8 +36,11 @@ var INGREDIENT_POSITIONS = {
 // Per-ingredient scale overrides (uniform). Falls back to DEFAULT_SCALE.
 var INGREDIENT_SCALES = {
   tomato: 1.0,
+  potato: 0.111,
+  diced_potato: 0.3,
   garlic: 0.2500,
   cabbage: 0.8,
+  rice: 0.133,
   canned_beans: 0.0181,
   onion: 0.0248,
   butternut_squash: 3.5300,
@@ -49,6 +57,7 @@ var DEFAULT_SCALE = 0.5;
 // Per-ingredient rotation overrides in radians { x, y, z }.
 // Falls back to DEFAULT_ROTATION.
 var INGREDIENT_ROTATIONS = {
+  potato:           { x: 0.0000, y:  0.0000, z: 0.0000 },
   garlic:           { x: 0.0000, y:  0.0000, z: 0.0000 },
   canned_beans:     { x: 0.0000, y: -1.3236, z: 0.0000 },
   onion:            { x: 0.0000, y:  0.0000, z: 0.1616 },

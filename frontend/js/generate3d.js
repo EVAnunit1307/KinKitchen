@@ -302,8 +302,13 @@ function resetCameraState() {
   console.log('Camera reset to default');
 }
 
-async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
+async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId, recipeId) {
   kitchenPublicId = publicId || null;
+  // Resolve recipe BEFORE any awaits so async state changes can't affect it
+  if (!recipeId) {
+    const _bid = window.KinKitchenApp?.state?.activeRecipe?.recipe?.id || '';
+    recipeId = _RECIPE_ID_MAP[_bid] || 'squash-stew';
+  }
   // Use overlay for status messages, container for the 3D canvas
   var overlay = document.getElementById('kitchen3d-overlay');
   if (overlay) overlay.innerHTML = '<p style="color:var(--cream);font-size:14px;">Loading 3D scene...</p>';
@@ -367,18 +372,21 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
     orbitControls.target.set(0.1169, 3.2055, 0.7738);
     orbitControls.update();
 
-    // Populate sidebar recipe info
-    const activeRec = window.KinKitchenApp && window.KinKitchenApp.state && window.KinKitchenApp.state.activeRecipe && window.KinKitchenApp.state.activeRecipe.recipe;
+    // Populate sidebar recipe info — prefer _RECIPE_SIDEBAR (always correct) over state
+    const _sidebarInfo = _RECIPE_SIDEBAR[recipeId];
+    const activeRec    = window.KinKitchenApp?.state?.activeRecipe?.recipe;
     const nationEl = document.getElementById('k3d-nation');
     const titleEl  = document.getElementById('k3d-title');
     const descEl   = document.getElementById('k3d-desc');
-    if (activeRec) {
-      if (nationEl) nationEl.textContent = activeRec.culture || '';
-      if (titleEl)  titleEl.textContent  = activeRec.name    || 'Three Sisters Stew';
-      if (descEl)   descEl.textContent   = activeRec.description || '';
-    } else {
-      if (titleEl) titleEl.textContent = 'Three Sisters Stew';
+    const mvEl     = document.getElementById('k3d-model-viewer');
+    if (_sidebarInfo) {
+      if (titleEl) titleEl.textContent = _sidebarInfo.title;
+      if (mvEl)    mvEl.setAttribute('src', assetUrl(_sidebarInfo.glb));
+    } else if (activeRec) {
+      if (titleEl) titleEl.textContent = activeRec.name || '';
     }
+    if (nationEl) nationEl.textContent = activeRec?.culture      || '';
+    if (descEl)   descEl.textContent   = activeRec?.description  || '';
 
     // Wire the pre-built XR button in the sidebar
     const xrBtn = document.getElementById('btn-enter-xr');
@@ -407,7 +415,7 @@ async function handleGenerate3d(imageUrl, boundingBoxes, container, publicId) {
 
     // Launch CookingGuide into the sidebar instructions panel
     if (window.CookingGuide) {
-      CookingGuide.init(scene, camera, renderer, ingredientMeshes);
+      CookingGuide.init(scene, camera, renderer, ingredientMeshes, recipeId);
     }
 
     // Camera locked by default; only unlocked in immersive/fullscreen mode
@@ -435,23 +443,71 @@ function addGenerate3dButton(imageUrl, boundingBoxes) {
   container.appendChild(section);
 }
 
-// ── Demo kitchen — Three Sisters preset, no upload required ──────────────────
-// Mirrors the DEMO_PRESETS.threesisters in backend/routes/upload.js.
-// Ingredients must have matching GLB files in /assets/3d/.
-const DEMO_PRESET_INGREDIENTS = [
-  { name: 'butternut-squash', confidence: 1 },
-  { name: 'canned-beans',     confidence: 1 },
-  { name: 'canned-corn',      confidence: 1 },
-  { name: 'chicken-stock',    confidence: 1 },
-  { name: 'onion',            confidence: 1 },
-  { name: 'garlic',           confidence: 1 },
-];
+// ── Demo kitchen — per-recipe ingredient presets ─────────────────────────────
+const DEMO_INGREDIENTS_BY_RECIPE = {
+  'squash-stew': [
+    { name: 'butternut-squash', confidence: 1 },
+    { name: 'canned-beans',     confidence: 1 },
+    { name: 'canned-corn',      confidence: 1 },
+    { name: 'chicken-stock',    confidence: 1 },
+    { name: 'onion',            confidence: 1 },
+    { name: 'garlic',           confidence: 1 },
+  ],
+  'potato-onion-fry': [
+    { name: 'potato',           confidence: 1 },
+    { name: 'onion',            confidence: 1 },
+  ],
+  'rice-and-beans': [
+    { name: 'rice',             confidence: 1 },
+    { name: 'canned-beans',     confidence: 1 },
+  ],
+  'bean-chili': [
+    { name: 'canned-beans',     confidence: 1 },
+    { name: 'tomato',           confidence: 1 },
+    { name: 'onion',            confidence: 1 },
+    { name: 'garlic',           confidence: 1 },
+  ],
+};
 
-function launchDemoKitchen(container) {
+const _RECIPE_ID_MAP = {
+  'three-sisters-soup':  'squash-stew',
+  'three-sisters-stew':  'squash-stew',
+  'squash-stew':         'squash-stew',
+  'rice-beans':          'rice-and-beans',
+  'rice-and-beans':      'rice-and-beans',
+  'potato-onion':        'potato-onion-fry',
+  'potato-onion-fry':    'potato-onion-fry',
+  'bean-chili':          'bean-chili',
+};
+
+// Per-recipe sidebar info (model-viewer GLB + display title)
+const _RECIPE_SIDEBAR = {
+  'squash-stew':      { glb: '/assets/3d/stew.glb',            title: 'Three Sisters Stew' },
+  'potato-onion-fry': { glb: '/assets/3d/patato-onion-fry.glb', title: 'Potato & Onion Fry' },
+  'rice-and-beans':   { glb: '/assets/3d/rice-and-beans.glb',  title: 'Rice & Beans'        },
+  'bean-chili':       { glb: '/assets/3d/bean-chilli.glb',      title: 'Bean Chili'           },
+};
+
+function launchDemoKitchen(container, backendId) {
+  // backendId may be passed directly from the click handler (most reliable),
+  // or fall back to reading from state.
+  backendId = backendId || window.KinKitchenApp?.state?.activeRecipe?.recipe?.id || '';
+  const recipeKey   = _RECIPE_ID_MAP[backendId] || 'squash-stew';
+  const ingredients = DEMO_INGREDIENTS_BY_RECIPE[recipeKey] || DEMO_INGREDIENTS_BY_RECIPE['squash-stew'];
+
+  console.log('[launchDemoKitchen] backendId:', backendId, '→ recipeKey:', recipeKey);
+
+  // Update sidebar recipe panel
+  const sidebar = _RECIPE_SIDEBAR[recipeKey] || _RECIPE_SIDEBAR['squash-stew'];
+  const mv = document.getElementById('k3d-model-viewer');
+  if (mv) mv.setAttribute('src', assetUrl(sidebar.glb));
+  const titleEl = document.getElementById('k3d-title');
+  if (titleEl) titleEl.textContent = sidebar.title;
+
   // Wait for the kitchen3d screen to finish layout before measuring container size
   function tryLaunch() {
     if (container.clientWidth > 0 && container.clientHeight > 0) {
-      handleGenerate3d('', DEMO_PRESET_INGREDIENTS, container);
+      handleGenerate3d('', ingredients, container, null, recipeKey);
     } else {
       setTimeout(tryLaunch, 50);
     }

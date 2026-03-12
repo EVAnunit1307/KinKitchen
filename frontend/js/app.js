@@ -68,6 +68,38 @@ const KinKitchenApp = (() => {
 
     // Auto-narrate the story screen via ElevenLabs when it becomes active
     if (screenName === 'story') {
+      // Update title and video for the currently selected recipe
+      const _recName = state.activeRecipe?.recipe?.name;
+      if (_recName) {
+        const _titleEl = document.getElementById('story-title');
+        if (_titleEl) _titleEl.textContent = _recName;
+      }
+
+      const _VIDEO_MAP = {
+        'potato-onion':     '/assets/potato-onion-fry.mp4',
+        'potato-onion-fry': '/assets/potato-onion-fry.mp4',
+        'rice-beans':       '/assets/rice-and-beans.mp4',
+        'rice-and-beans':   '/assets/rice-and-beans.mp4',
+        'bean-chili':       '/assets/bean-chilli.mp4',
+        'bean-chilli':      '/assets/bean-chilli.mp4',
+      };
+      const _rid     = state.activeRecipe?.recipe?.id || '';
+      const _vpath   = _VIDEO_MAP[_rid];
+      const _genBtn  = document.getElementById('story-generate-video-btn');
+      const _vwrap   = document.getElementById('story-video-wrap');
+      const _vload   = document.getElementById('story-video-loading');
+      const _vel     = document.getElementById('story-video');
+      if (_vpath && _genBtn && _vwrap && _vel) {
+        _genBtn.style.display = 'none';
+        _vwrap.style.display  = '';
+        if (_vload) _vload.style.display = 'none';
+        _vel.src = window.assetUrl ? window.assetUrl(_vpath) : _vpath;
+        _vel.style.display = '';
+      } else if (_genBtn) {
+        _genBtn.style.display = '';
+        if (_vwrap) _vwrap.style.display = 'none';
+      }
+
       setTimeout(() => {
         const body  = $('story-body')?.textContent?.trim();
         const audio = $('story-audio');
@@ -81,6 +113,11 @@ const KinKitchenApp = (() => {
 
   // ── Launch 3D kitchen with current upload data ────────────────────────────
   function _launchKitchen3d() {
+    // Resolve recipe NOW, synchronously, before the async chain
+    const _RMAP = { 'three-sisters-soup': 'squash-stew', 'three-sisters-stew': 'squash-stew', 'squash-stew': 'squash-stew', 'rice-beans': 'rice-and-beans', 'potato-onion': 'potato-onion-fry', 'bean-chili': 'bean-chili' };
+    const _bid  = state.activeRecipe?.recipe?.id || '';
+    const _rid  = _RMAP[_bid] || 'squash-stew';
+
     goTo('kitchen3d');
     requestAnimationFrame(() => {
       const container = document.getElementById('kitchen3d-container');
@@ -93,9 +130,9 @@ const KinKitchenApp = (() => {
           name:       typeof f === 'object' ? f.label : f,
           confidence: f.confidence || 1,
         }));
-        window.handleGenerate3d(data.url || '', presetBoxes, container, data.publicId || null);
+        window.handleGenerate3d(data.url || '', presetBoxes, container, data.publicId || null, _rid);
       } else {
-        window.handleGenerate3d(data.url || '', bboxes, container, data.publicId || null);
+        window.handleGenerate3d(data.url || '', bboxes, container, data.publicId || null, _rid);
       }
     });
   }
@@ -212,23 +249,18 @@ const KinKitchenApp = (() => {
     });
 
     // ── Recipe → 3D Kitchen (selected recipe from list) ──────────────────────
-    // If selected recipe matches their upload → 3D build with that image. Else → demo kitchen.
+    // Read recipe ID from the selected DOM card first, fall back to state.
     $('btn-enter-kitchen3d')?.addEventListener('click', () => {
-      const primaryFromUpload = state.uploadData?.suggestedRecipes?.[0]?.recipe;
-      const currentRecipe     = state.activeRecipe?.recipe || primaryFromUpload;
-      const isUploadRecipe   = primaryFromUpload && currentRecipe && currentRecipe.id === primaryFromUpload.id;
-
-      if (state.uploadData && isUploadRecipe) {
-        _launchKitchen3d();
-      } else if (state.uploadData) {
-        goTo('kitchen3d');
-        requestAnimationFrame(() => {
-          const container = document.getElementById('kitchen3d-container');
-          if (container && window.launchDemoKitchen) window.launchDemoKitchen(container);
-        });
-      } else {
-        goTo('upload');
-      }
+      const selectedCard = document.querySelector('.kk-recipe-sug--selected');
+      const domRecipeId  = selectedCard?.dataset?.recipeId || '';
+      const stateRecipeId = state.activeRecipe?.recipe?.id || '';
+      const backendId = domRecipeId || stateRecipeId;
+      console.log('[btn-enter-kitchen3d] domRecipeId:', domRecipeId, 'stateRecipeId:', stateRecipeId, '→ using:', backendId);
+      goTo('kitchen3d');
+      requestAnimationFrame(() => {
+        const container = document.getElementById('kitchen3d-container');
+        if (container && window.launchDemoKitchen) window.launchDemoKitchen(container, backendId);
+      });
     });
 
     // ── 3D Kitchen ───────────────────────────────────────────────────────────

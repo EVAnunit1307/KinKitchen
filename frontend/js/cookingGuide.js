@@ -43,6 +43,7 @@ const CookingGuide = (() => {
   let _stirAngle    = 0;
   let _chopWaiting  = false;  // true = waiting for user to click Start Cutting
   let _nextReady    = false;  // true = animation complete, next button unlocked
+  let _startBtnFn   = null;  // function to call when Start button is clicked
 
   // Completion scene
   let _soupMesh        = null;
@@ -106,69 +107,225 @@ const CookingGuide = (() => {
     canned_beans_1:     '🫘',
     canned_corn_1:      '🌽',
     chicken_stock_1:    '🍲',
+    potato_1:           '🥔',
+    tomato_1:           '🍅',
+    tomato_2:           '🍅',
+    tomato_3:           '🍅',
+    rice_1:             '🍚',
   };
 
-  // ── Step data ─────────────────────────────────────────────────────────────
-  const STEPS = [
-    {
-      id: 1, phase: 'Preparation', icon: '🔪', action: 'CHOP', heroColor: '#5C2A0E', animType: 'chop',
-      title: 'Cube the squash',
-      body: 'Peel the butternut squash, halve lengthwise, scoop out the seeds, and cut into 1-inch cubes. Uniform size = even cooking.',
-      tip: 'Use the heel of your knife, knuckles curled — the blade guides against them.',
-      activeIngredients: ['butternut_squash_1'], duration: null,
+  // ── Recipe catalogue ──────────────────────────────────────────────────────
+  const RECIPES = {
+    'squash-stew': {
+      name: 'Three Sisters Stew',
+      subtitle: 'Baaniibaanesi-Naboob',
+      steps: [
+        {
+          id: 1, phase: 'Preparation', icon: '🔪', action: 'CHOP', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Cube the squash',
+          body: 'Peel the butternut squash, halve lengthwise, scoop out the seeds, and cut into 1-inch cubes. Uniform size = even cooking.',
+          tip: 'Use the heel of your knife, knuckles curled — the blade guides against them.',
+          activeIngredients: ['butternut_squash_1'], duration: null,
+        },
+        {
+          id: 2, phase: 'Preparation', icon: '🔪', action: 'DICE', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Dice the onion',
+          body: 'Halve through the root end, peel, make parallel cuts lengthwise then crosswise. The root holds everything together while you work.',
+          tip: 'Refrigerate the onion 15 min before cutting — reduces the tear-inducing vapour.',
+          activeIngredients: ['onion_1'], duration: null,
+        },
+        {
+          id: 3, phase: 'Preparation', icon: '🔪', action: 'MINCE', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Smash and mince the garlic',
+          body: 'Press the flat of your knife over each clove and smash with your palm. Peel, then rock-chop into a fine mince. 4–5 cloves.',
+          tip: 'Smashing splits the skin instantly. Smaller mince = more flavour unlocked.',
+          activeIngredients: ['garlic_1'], duration: null,
+        },
+        {
+          id: 4, phase: 'Preparation', icon: '🍲', action: 'POUR_STOCK', heroColor: '#1E3D60', animType: 'pour',
+          title: 'Pour chicken stock into the pot',
+          body: 'Open the chicken stock and pour 6 cups into the large pot. This forms the base of your stew.',
+          tip: 'Room-temperature stock heats faster than cold from the fridge.',
+          activeIngredients: ['chicken_stock_1'], duration: null,
+        },
+        {
+          id: 5, phase: 'Preparation', icon: '🌡️', action: 'BOIL', heroColor: '#5A2800', animType: 'boil',
+          title: 'Bring stock to a boil',
+          body: 'Place the pot on the stove and crank the heat to high. Wait for a rolling boil — big bubbles breaking the surface.',
+          tip: 'A rolling boil is when bubbles break the surface continuously, not just at the edges.',
+          activeIngredients: ['chicken_stock_1'], duration: null,
+        },
+        {
+          id: 6, phase: 'Cooking', icon: '🥘', action: 'ADD_VEGGIES', heroColor: '#5A2800', animType: 'add_veggies',
+          title: 'Drop the veggies into the pot',
+          body: 'Add the cubed squash, diced onion, and minced garlic into the boiling stock. They\'ll cook down into a rich, hearty stew base.',
+          tip: 'Add the squash first — it takes the longest to soften.',
+          activeIngredients: ['butternut_squash_1', 'onion_1', 'garlic_1'], duration: null,
+        },
+        {
+          id: 7, phase: 'Cooking', icon: '🥘', action: 'ADD_BEANS_CORN', heroColor: '#5A2800', animType: 'add_beans_corn',
+          title: 'Add beans and corn to the pot',
+          body: 'Pour the drained beans and corn into the boiling stock. They\'ll simmer alongside the veggies and soak up all that flavour.',
+          tip: 'Add beans first — they\'re denser and need a bit more time to heat through.',
+          activeIngredients: ['canned_beans_1', 'canned_corn_1'], duration: null,
+        },
+        {
+          id: 8, phase: 'Finishing', icon: '🥄', action: 'STIR', heroColor: '#1A0E04', animType: 'stir_finish',
+          title: 'Stir and let the stew come together',
+          body: 'Give everything a good stir to combine. The stew will thicken as the squash breaks down — your Three Sisters Stew is ready.',
+          tip: 'Taste and adjust seasoning. A squeeze of lime at the end brightens all the flavours.',
+          activeIngredients: [], duration: null,
+        },
+      ],
     },
-    {
-      id: 2, phase: 'Preparation', icon: '🔪', action: 'DICE', heroColor: '#5C2A0E', animType: 'chop',
-      title: 'Dice the onion',
-      body: 'Halve through the root end, peel, make parallel cuts lengthwise then crosswise. The root holds everything together while you work.',
-      tip: 'Refrigerate the onion 15 min before cutting — reduces the tear-inducing vapour.',
-      activeIngredients: ['onion_1'], duration: null,
-    },
-    {
-      id: 3, phase: 'Preparation', icon: '🔪', action: 'MINCE', heroColor: '#5C2A0E', animType: 'chop',
-      title: 'Smash and mince the garlic',
-      body: 'Press the flat of your knife over each clove and smash with your palm. Peel, then rock-chop into a fine mince. 4–5 cloves.',
-      tip: 'Smashing splits the skin instantly. Smaller mince = more flavour unlocked.',
-      activeIngredients: ['garlic_1'], duration: null,
-    },
-    {
-      id: 4, phase: 'Preparation', icon: '🍲', action: 'POUR_STOCK', heroColor: '#1E3D60', animType: 'pour',
-      title: 'Pour chicken stock into the pot',
-      body: 'Open the chicken stock and pour 6 cups into the large pot. This forms the base of your stew.',
-      tip: 'Room-temperature stock heats faster than cold from the fridge.',
-      activeIngredients: ['chicken_stock_1'], duration: null,
-    },
-    {
-      id: 5, phase: 'Preparation', icon: '🌡️', action: 'BOIL', heroColor: '#5A2800', animType: 'boil',
-      title: 'Bring stock to a boil',
-      body: 'Place the pot on the stove and crank the heat to high. Wait for a rolling boil — big bubbles breaking the surface.',
-      tip: 'A rolling boil is when bubbles break the surface continuously, not just at the edges.',
-      activeIngredients: ['chicken_stock_1'], duration: null,
-    },
-    {
-      id: 6, phase: 'Cooking', icon: '🥘', action: 'ADD_VEGGIES', heroColor: '#5A2800', animType: 'add_veggies',
-      title: 'Drop the veggies into the pot',
-      body: 'Add the cubed squash, diced onion, and minced garlic into the boiling stock. They\'ll cook down into a rich, hearty stew base.',
-      tip: 'Add the squash first — it takes the longest to soften.',
-      activeIngredients: ['butternut_squash_1', 'onion_1', 'garlic_1'], duration: null,
-    },
-    {
-      id: 7, phase: 'Cooking', icon: '🥘', action: 'ADD_BEANS_CORN', heroColor: '#5A2800', animType: 'add_beans_corn',
-      title: 'Add beans and corn to the pot',
-      body: 'Pour the drained beans and corn into the boiling stock. They\'ll simmer alongside the veggies and soak up all that flavour.',
-      tip: 'Add beans first — they\'re denser and need a bit more time to heat through.',
-      activeIngredients: ['canned_beans_1', 'canned_corn_1'], duration: null,
-    },
-    {
-      id: 8, phase: 'Finishing', icon: '🥄', action: 'STIR', heroColor: '#1A0E04', animType: 'stir_finish',
-      title: 'Stir and let the stew come together',
-      body: 'Give everything a good stir to combine. The stew will thicken as the squash breaks down — your Three Sisters Stew is ready.',
-      tip: 'Taste and adjust seasoning. A squeeze of lime at the end brightens all the flavours.',
-      activeIngredients: [], duration: null,
-    },
-  ];
 
-  const TOTAL = STEPS.length;
+    'potato-onion-fry': {
+      name: 'Potato & Onion Fry',
+      subtitle: '',
+      steps: [
+        {
+          id: 1, phase: 'Preparation', icon: '🔪', action: 'CHOP', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Cube the potato',
+          body: 'Peel the potato and cut into small cubes, about half an inch. Smaller pieces fry faster and get crispier edges.',
+          tip: 'Pat the cubes dry with a cloth — less moisture means better browning.',
+          activeIngredients: ['potato_1'], duration: null,
+        },
+        {
+          id: 2, phase: 'Preparation', icon: '🔪', action: 'DICE', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Slice the onion',
+          body: 'Halve the onion and slice into thin half-moons. They\'ll soften and sweeten as they fry alongside the potato.',
+          tip: 'Thin slices cook faster — try to keep them even.',
+          activeIngredients: ['onion_1'], duration: null,
+        },
+        {
+          id: 3, phase: 'Cooking', icon: '🔥', action: 'HEAT', heroColor: '#5A2800', animType: 'pof_step',
+          title: 'Heat oil in the pan',
+          body: 'Add a good glug of oil to the pan and heat on medium-high until shimmering. The oil needs to be hot before anything goes in.',
+          tip: 'Drop a small piece of onion in — if it sizzles right away, the oil is ready.',
+          activeIngredients: [], duration: null,
+        },
+        {
+          id: 4, phase: 'Cooking', icon: '🥘', action: 'DROP_POTATO', heroColor: '#5A2800', animType: 'pof_step',
+          title: 'Add potato to the pan',
+          body: 'Spread the potato cubes in a single layer. Leave them alone for 3–4 minutes so they develop a golden crust before stirring.',
+          tip: 'Resist the urge to stir too early — that crust is the best part.',
+          activeIngredients: ['potato_1'], duration: null,
+        },
+        {
+          id: 5, phase: 'Cooking', icon: '🥘', action: 'DROP_ONION', heroColor: '#5A2800', animType: 'pof_step',
+          title: 'Add onion and season',
+          body: 'Add the sliced onion, salt, pepper, and any spices you like. Stir everything together and fry for another 5–6 minutes.',
+          tip: 'A pinch of smoked paprika or cumin takes this to another level.',
+          activeIngredients: ['onion_1'], duration: null,
+        },
+        {
+          id: 6, phase: 'Finishing', icon: '🥄', action: 'STIR', heroColor: '#1A0E04', animType: 'stir',
+          title: 'Stir and finish',
+          body: 'Keep stirring until the potato is cooked through and golden, and the onion is soft and caramelised. Serve hot.',
+          tip: 'Taste before serving and adjust seasoning — potatoes need plenty of salt.',
+          activeIngredients: [], duration: null,
+        },
+      ],
+    },
+
+    'rice-and-beans': {
+      name: 'Rice & Beans',
+      subtitle: '',
+      steps: [
+        {
+          id: 1, phase: 'Preparation', icon: '🍚', action: 'ADD_RICE', heroColor: '#1E3D60', animType: 'rab_step',
+          title: 'Add rice to the pot',
+          body: 'Measure your rice and add it straight to the pot. For every cup of rice add 1¾ cups of water. Add a pinch of salt.',
+          tip: 'No need to rinse — just pour it in and let the water do the work.',
+          activeIngredients: ['rice_1'], duration: null,
+        },
+        {
+          id: 2, phase: 'Cooking', icon: '🌡️', action: 'BOIL', heroColor: '#5A2800', animType: 'boil',
+          title: 'Bring to a boil then simmer',
+          body: 'Bring to a boil, then reduce heat to low. Cover and cook for 15–18 minutes without lifting the lid.',
+          tip: 'Steam cooks the rice — every time you lift the lid you lose it.',
+          activeIngredients: [], duration: null,
+        },
+        {
+          id: 3, phase: 'Cooking', icon: '🥘', action: 'DROP_BEANS', heroColor: '#5A2800', animType: 'rab_step',
+          title: 'Add beans',
+          body: 'Drain and rinse the canned beans. Stir them in gently and replace the lid for 2 minutes to heat through.',
+          tip: 'Black beans, kidney beans, or pinto all work great here.',
+          activeIngredients: ['canned_beans_1'], duration: null,
+        },
+        {
+          id: 4, phase: 'Finishing', icon: '🥄', action: 'STIR', heroColor: '#1A0E04', animType: 'stir',
+          title: 'Season and serve',
+          body: 'Fluff the rice with a fork, stir in the beans, and season with salt, pepper, and a squeeze of lime. Serve as a side or a main.',
+          tip: 'Fresh cilantro and a dash of hot sauce finish it perfectly.',
+          activeIngredients: [], duration: null,
+        },
+      ],
+    },
+
+    'bean-chili': {
+      name: 'Bean Chili',
+      subtitle: '',
+      steps: [
+        {
+          id: 1, phase: 'Preparation', icon: '🔪', action: 'DICE', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Dice the onion',
+          body: 'Dice the onion into small, even pieces. It forms the flavour base of the chili so don\'t rush this step.',
+          tip: 'Smaller dice means it melts into the sauce rather than staying chunky.',
+          activeIngredients: ['onion_1'], duration: null,
+        },
+        {
+          id: 2, phase: 'Preparation', icon: '🔪', action: 'MINCE', heroColor: '#5C2A0E', animType: 'chop',
+          title: 'Mince the garlic',
+          body: 'Smash and mince 3–4 cloves of garlic fine. It infuses into the oil and builds the base flavour.',
+          tip: 'More garlic is almost always better in chili.',
+          activeIngredients: ['garlic_1'], duration: null,
+        },
+        {
+          id: 3, phase: 'Cooking', icon: '🍲', action: 'ADD_VEGGIES', heroColor: '#5A2800', animType: 'add_veggies',
+          title: 'Sauté onion and garlic',
+          body: 'Add the diced onion and minced garlic to the pot with a splash of oil. Cook on medium heat for 4–5 minutes until softened and fragrant.',
+          tip: 'Don\'t rush this — properly softened aromatics are the foundation of great chili.',
+          activeIngredients: [], duration: null,
+        },
+        {
+          id: 4, phase: 'Cooking', icon: '🍅', action: 'DROP_TOMATOES', heroColor: '#5A2800', animType: 'bc_step',
+          title: 'Add tomato and spices',
+          body: 'Add crushed tomato, chili powder, cumin, smoked paprika, and a pinch of cayenne. Stir well to combine.',
+          tip: 'Toast the spices for 30 seconds before adding tomato — it deepens the flavour.',
+          activeIngredients: ['tomato_1'], duration: null,
+        },
+        {
+          id: 5, phase: 'Cooking', icon: '🥘', action: 'DROP_BEANS', heroColor: '#5A2800', animType: 'bc_step',
+          title: 'Add beans',
+          body: 'Drain and rinse the canned beans, then pour them into the pot. Stir to combine with the tomato base.',
+          tip: 'Two cans of beans gives a hearty texture — use one if you prefer more sauce.',
+          activeIngredients: ['canned_beans_1'], duration: null,
+        },
+        {
+          id: 6, phase: 'Cooking', icon: '🌡️', action: 'BOIL', heroColor: '#5A2800', animType: 'boil',
+          title: 'Simmer the chili',
+          body: 'Bring to a boil then reduce to a low simmer. Cook uncovered for 20–25 minutes, stirring occasionally, until thickened.',
+          tip: 'The longer it simmers, the better it gets — chili only improves with time.',
+          activeIngredients: [], duration: null,
+        },
+        {
+          id: 7, phase: 'Finishing', icon: '🥄', action: 'STIR', heroColor: '#1A0E04', animType: 'stir',
+          title: 'Season and serve',
+          body: 'Taste and adjust seasoning. Serve with rice, cornbread, or on its own with a dollop of sour cream.',
+          tip: 'A squeeze of lime right at the end cuts through the richness.',
+          activeIngredients: [], duration: null,
+        },
+      ],
+    },
+  };
+
+  // Active recipe state (set by init)
+  let _activeSteps = RECIPES['squash-stew'].steps;
+  let _activeRecipeMeta = RECIPES['squash-stew'];
+
+  /** Accessor for current recipe's steps array */
+  function _S() { return _activeSteps; }
 
   // ── Audio ─────────────────────────────────────────────────────────────────
   function _actx() {
@@ -406,9 +563,9 @@ const CookingGuide = (() => {
 
     _overlayEl = el;
     _q('#cg-btn-next').addEventListener('click', () => _nextStep());
-    _q('#cg-btn-start').addEventListener('click', () => { _removeStartBtn(); _beginChop(); });
+    _q('#cg-btn-start').addEventListener('click', () => { const fn = _startBtnFn || _beginChop; _startBtnFn = null; _removeStartBtn(); fn(); });
     _q('#cg-btn-listen').addEventListener('click', () => {
-      const step = STEPS[_currentStep];
+      const step = _S()[_currentStep];
       if (step) _speakStep(step);
     });
     _setupVoiceNext(el);
@@ -462,29 +619,37 @@ const CookingGuide = (() => {
   // ── Orange pile of cubes ─────────────────────────────────────────────────
   function _buildOrangePile() {
     const glbLoader = new THREE.GLTFLoader();
+    const isPof     = _activeRecipeMeta?.name === 'Potato & Onion Fry';
+    const glbPath   = isPof ? '/assets/3d/diced-potato.glb' : '/assets/3d/orange-pile-cubes.glb';
+    const pileScale = isPof
+      ? (INGREDIENT_SCALES['diced_potato'] || 0.3)
+      : PILE_SCALE;
+    const pilePos   = isPof
+      ? (INGREDIENT_POSITIONS['diced_potato_1'] || PILE_POS)
+      : PILE_POS;
+    const ingName   = isPof ? 'diced-potato' : 'orange-pile-cubes';
+
     glbLoader.load(
-      assetUrl('/assets/3d/orange-pile-cubes.glb'),
+      assetUrl(glbPath),
       (gltf) => {
         const g = gltf.scene;
         g.traverse(c => {
           if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; }
         });
-        g.position.set(PILE_POS.x, PILE_POS.y, PILE_POS.z);
+        g.position.set(pilePos.x, pilePos.y, pilePos.z);
         g.rotation.set(PILE_ROT.x, PILE_ROT.y, PILE_ROT.z);
-        g.scale.setScalar(PILE_SCALE);
+        g.scale.setScalar(pileScale);
         g.userData.slotName = _pileSlot;
-        g.userData.ingredientName = 'orange-pile-cubes';
+        g.userData.ingredientName = ingName;
         g.visible = false;
         _scene.add(g);
         _orangePile = g;
         if (_meshes) _meshes.push(g);
-        const box = new THREE.Box3().setFromObject(g);
-        const size = box.getSize(new THREE.Vector3());
-        console.log('[CookingGuide] orange-pile-cubes.glb loaded — world size:', size, 'pos:', PILE_POS);
+        console.log('[CookingGuide]', ingName, 'loaded at', pilePos);
       },
       undefined,
       () => {
-        console.warn('[CookingGuide] orange-pile-cubes.glb failed to load');
+        console.warn('[CookingGuide]', glbPath, 'failed to load');
       }
     );
   }
@@ -564,10 +729,15 @@ const CookingGuide = (() => {
         g.scale.setScalar(POT_SCALE);
         g.userData.slotName = _potSlot;
         g.userData.ingredientName = 'pot';
-        g.visible = false;
         _scene.add(g);
         _potMesh = g;
         if (_meshes) _meshes.push(g);
+        // Pot loads async — re-apply visibility based on current step now that mesh exists
+        const _potStartNow = (_activeRecipeMeta?.name === 'Potato & Onion Fry') ? 3
+          : (_activeRecipeMeta?.name === 'Rice & Beans') ? 1
+          : (_activeRecipeMeta?.name === 'Bean Chili') ? 3 : 4;
+        const _curStep = _S()[_currentStep];
+        g.visible = !!(_curStep && _curStep.id >= _potStartNow);
         const box = new THREE.Box3().setFromObject(g);
         const size = box.getSize(new THREE.Vector3());
         console.log('[CookingGuide] pot.glb loaded — world size:', size, 'pos:', POT_POS);
@@ -579,11 +749,17 @@ const CookingGuide = (() => {
     );
   }
 
-  // ── Stew (final reveal) ───────────────────────────────────────────────────
+  // ── Stew / final dish (counter reveal, recipe-aware) ─────────────────────
   function _buildStew() {
     const glbLoader = new THREE.GLTFLoader();
+    const _isPof2 = _activeRecipeMeta?.name === 'Potato & Onion Fry';
+    const _isRab2 = _activeRecipeMeta?.name === 'Rice & Beans';
+    const _isBc2  = _activeRecipeMeta?.name === 'Bean Chili';
+    const _stewGlb = _isPof2 ? '/assets/3d/patato-onion-fry.glb'
+      : _isRab2 ? '/assets/3d/rice-and-beans.glb'
+      : _isBc2  ? '/assets/3d/bean-chilli.glb' : '/assets/3d/stew.glb';
     glbLoader.load(
-      assetUrl('/assets/3d/stew.glb'),
+      assetUrl(_stewGlb),
       (gltf) => {
         const g = gltf.scene;
         g.traverse(c => {
@@ -847,6 +1023,9 @@ const CookingGuide = (() => {
     if (typeof Step6Veggies !== 'undefined') Step6Veggies.cleanup();
     if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.cleanup();
     if (typeof Step8Stir !== 'undefined') Step8Stir.cleanup();
+    if (typeof BeanChiliSteps !== 'undefined') BeanChiliSteps.cleanup();
+    if (typeof RiceBeansSteps !== 'undefined') RiceBeansSteps.cleanup();
+    if (typeof PotatoFrySteps !== 'undefined') PotatoFrySteps.cleanup();
     _animType = type; _animT = 0; _stirAngle = 0;
 
     switch (type) {
@@ -875,22 +1054,43 @@ const CookingGuide = (() => {
         _chopWaiting = true;
         setTimeout(_beginStir, 500);
         break;
-      case 'stir':
-        if (_spoonGroup && ingPos) {
-          _spoonGroup.position.set(ingPos.x, ingPos.y + 0.3, ingPos.z);
+      case 'stir': {
+        const _stirPos = ingPos || (_potMesh ? _potMesh.position : null);
+        if (_spoonGroup && _stirPos) {
+          _spoonGroup.position.set(_stirPos.x, _stirPos.y + 0.3, _stirPos.z);
           _spoonGroup.visible = true;
         }
+        setTimeout(_unlockNext, 2000);
         break;
-      case 'steam':   _spawnSteamWisps(); break;
+      }
+      case 'steam':   _spawnSteamWisps(); _unlockNext(); break;
       case 'drain':   _spawnDrainDroplets(); break;
       case 'season':  _spawnSaltCrystals(); break;
       case 'sparkle': _spawnSparkles(12); break;
+      case 'add_ingredient':
+        _spawnSparkles(10);
+        setTimeout(_unlockNext, 1800);
+        break;
+      case 'bc_step':
+        _chopWaiting = true;
+        setTimeout(_beginBcStep, 500);
+        break;
+      case 'rab_step':
+        _chopWaiting = true;
+        if (_currentStep === 0) _showStartBtn(_beginRabStep);
+        else setTimeout(_beginRabStep, 500);
+        break;
+      case 'pof_step':
+        _chopWaiting = true;
+        setTimeout(_beginPofStep, 500);
+        break;
     }
   }
 
 
   // ── Start button (shown only on step 1 inside the instruction panel) ────────
-  function _showStartBtn() {
+  function _showStartBtn(fn) {
+    _startBtnFn = fn || null;
     const startBtn = _q('#cg-btn-start'), nextBtn = _q('#cg-btn-next');
     if (startBtn) startBtn.style.display = '';
     if (nextBtn)  nextBtn.style.display  = 'none';
@@ -910,7 +1110,7 @@ const CookingGuide = (() => {
   function _beginChop() {
     _chopWaiting = false;
 
-    const step = STEPS[_currentStep];
+    const step = _S()[_currentStep];
     if (!step || !step.activeIngredients[0]) return;
 
     const slot = step.activeIngredients[0];
@@ -1020,37 +1220,44 @@ const CookingGuide = (() => {
     }
   }
 
-  // ── Begin Pour (for Step4Stock) ─────────────────────────────────────────
+  // ── Begin Pour ────────────────────────────────────────────────────────────
   function _beginPour() {
     _chopWaiting = false;
 
-    const step = STEPS[_currentStep];
-    if (!step || step.action !== 'POUR_STOCK') return;
+    const step = _S()[_currentStep];
+    if (!step) return;
 
-    const slot = step.activeIngredients[0];
-    const m = _getMesh(slot);
-    if (!m) return;
-
-    if (typeof Step4Stock !== 'undefined') {
-      Step4Stock.start({
-        stockMesh:  m,
-        potMesh:    _potMesh,
-        onComplete: function onPourComplete() {
-          console.log('[CookingGuide] pour stock pipeline complete');
-          _unlockNext();
-        },
-      });
+    // Three Sisters Stew: full Step4Stock pour animation
+    if (step.action === 'POUR_STOCK') {
+      const slot = step.activeIngredients[0];
+      const m = _getMesh(slot);
+      if (m && typeof Step4Stock !== 'undefined') {
+        Step4Stock.start({
+          stockMesh:  m,
+          potMesh:    _potMesh,
+          onComplete: function onPourComplete() {
+            console.log('[CookingGuide] pour stock pipeline complete');
+            _unlockNext();
+          },
+        });
+        return;
+      }
     }
+
+    // Generic pour: sparkles on active ingredient then unlock
+    _spawnDrainDroplets();
+    setTimeout(_unlockNext, 1800);
   }
 
   // ── Begin Boil (for Step5Boil — persistent steam) ─────────────────────
   function _beginBoil() {
     _chopWaiting = false;
 
-    const step = STEPS[_currentStep];
-    if (!step || step.action !== 'BOIL' || step.animType !== 'boil') return;
+    const step = _S()[_currentStep];
+    if (!step || step.animType !== 'boil') return;
 
-    if (typeof Step5Boil !== 'undefined') {
+    // Three Sisters Stew: use Step5Boil for persistent steam over the pot
+    if (step.action === 'BOIL' && typeof Step5Boil !== 'undefined') {
       Step5Boil.start({
         potMesh: _potMesh,
         onComplete: function onBoilComplete() {
@@ -1058,14 +1265,19 @@ const CookingGuide = (() => {
           _unlockNext();
         },
       });
+      return;
     }
+
+    // Generic boil: wisp particles then unlock
+    _spawnSteamWisps();
+    setTimeout(_unlockNext, 2000);
   }
 
   // ── Begin Add Veggies (for Step6Veggies) ──────────────────────────────
   function _beginAddVeggies() {
     _chopWaiting = false;
 
-    const step = STEPS[_currentStep];
+    const step = _S()[_currentStep];
     if (!step || step.action !== 'ADD_VEGGIES') return;
 
     if (typeof Step6Veggies !== 'undefined') {
@@ -1086,7 +1298,7 @@ const CookingGuide = (() => {
   function _beginAddBeansCorn() {
     _chopWaiting = false;
 
-    const step = STEPS[_currentStep];
+    const step = _S()[_currentStep];
     if (!step || step.action !== 'ADD_BEANS_CORN') return;
 
     const beansM = _getMesh('canned_beans_1');
@@ -1109,7 +1321,7 @@ const CookingGuide = (() => {
   function _beginStir() {
     _chopWaiting = false;
 
-    const step = STEPS[_currentStep];
+    const step = _S()[_currentStep];
     if (!step || step.action !== 'STIR') return;
 
     if (typeof Step8Stir !== 'undefined') {
@@ -1126,6 +1338,55 @@ const CookingGuide = (() => {
     }
   }
 
+  // ── Recipe step helpers (shared opts builder) ─────────────────────────────
+  function _recipeStepOpts(onComplete) {
+    return {
+      getMesh:     _getMesh.bind(null),
+      potMesh:     _potMesh,
+      knifeGroup:  _knifeGroup,
+      spoonGroup:  _spoonGroup,
+      dicedPile:   _orangePile,       // diced potato pile → DROP_POTATO
+      dicedOnions: _dicedOnionsMesh,  // diced onion pile  → DROP_ONION
+      onComplete,
+    };
+  }
+
+  // ── Begin Bean Chili step ──────────────────────────────────────────────────
+  function _beginBcStep() {
+    _chopWaiting = false;
+    const step = _S()[_currentStep];
+    if (!step) return;
+    if (typeof BeanChiliSteps !== 'undefined') {
+      BeanChiliSteps.startStep(step.action, _recipeStepOpts(_unlockNext));
+    } else {
+      setTimeout(_unlockNext, 1500);
+    }
+  }
+
+  // ── Begin Rice & Beans step ────────────────────────────────────────────────
+  function _beginRabStep() {
+    _chopWaiting = false;
+    const step = _S()[_currentStep];
+    if (!step) return;
+    if (typeof RiceBeansSteps !== 'undefined') {
+      RiceBeansSteps.startStep(step.action, _recipeStepOpts(_unlockNext));
+    } else {
+      setTimeout(_unlockNext, 1500);
+    }
+  }
+
+  // ── Begin Potato & Onion Fry step ─────────────────────────────────────────
+  function _beginPofStep() {
+    _chopWaiting = false;
+    const step = _S()[_currentStep];
+    if (!step) return;
+    if (typeof PotatoFrySteps !== 'undefined') {
+      PotatoFrySteps.startStep(step.action, _recipeStepOpts(_unlockNext));
+    } else {
+      setTimeout(_unlockNext, 1500);
+    }
+  }
+
   // ── Animation ticks ───────────────────────────────────────────────────────
   function _tickChop(dt) {
     if (_chopWaiting) return;
@@ -1138,7 +1399,7 @@ const CookingGuide = (() => {
 
   function _tickStir(dt, base) {
     if (!_spoonGroup) return;
-    const isMash = STEPS[_currentStep] && STEPS[_currentStep].action === 'MASH';
+    const isMash = _S()[_currentStep] && _S()[_currentStep].action === 'MASH';
     if (isMash) {
       _stirAngle += dt * 2.2;
       const press = Math.abs(Math.sin(_stirAngle));
@@ -1296,7 +1557,7 @@ const CookingGuide = (() => {
 
   // ── Step renderer ─────────────────────────────────────────────────────────
   function _applyStep(idx) {
-    const step = STEPS[idx]; if (!step) return;
+    const step = _S()[idx]; if (!step) return;
 
     if (_autoAdvanceTimer) { clearTimeout(_autoAdvanceTimer); _autoAdvanceTimer = null; }
     _countdownStart = null;
@@ -1304,8 +1565,11 @@ const CookingGuide = (() => {
     // Return any ingredients sitting on the cutting board
     _returnAllIngredients();
 
-    // Pot appears at step 4 and stays for the rest of the guide
-    if (_potMesh && step.id >= 4) _potMesh.visible = true;
+    // Pot appears at step 3 for potato-onion-fry (HEAT step), step 4 for other recipes
+    const _potStartStep = (_activeRecipeMeta?.name === 'Potato & Onion Fry') ? 3
+      : (_activeRecipeMeta?.name === 'Rice & Beans') ? 1
+      : (_activeRecipeMeta?.name === 'Bean Chili') ? 3 : 4;
+    if (_potMesh && step.id >= _potStartStep) _potMesh.visible = true;
 
     // Hero band
     const hero = _q('#cg-hero');
@@ -1322,7 +1586,7 @@ const CookingGuide = (() => {
 
     // Progress
     const fill = _q('#cg-prog-fill');
-    if (fill) fill.style.width = `${(step.id / TOTAL) * 100}%`;
+    if (fill) fill.style.width = `${(step.id / _S().length) * 100}%`;
 
     // Content
     _set('cg-phase',     step.phase);
@@ -1333,7 +1597,7 @@ const CookingGuide = (() => {
 
     // Buttons
     const nxBtn = _q('#cg-btn-next');
-    if (nxBtn) nxBtn.textContent = idx === TOTAL - 1 ? 'Finish \u2192' : 'Next \u2192';
+    if (nxBtn) nxBtn.textContent = idx === _S().length - 1 ? 'Finish \u2192' : 'Next \u2192';
     _lockNext();
 
     // Fade back in
@@ -1406,10 +1670,16 @@ const CookingGuide = (() => {
       });
     }
 
-    // Load the soup model
+    // Load the finished dish model (recipe-aware)
+    const _isPof = _activeRecipeMeta?.name === 'Potato & Onion Fry';
+    const _isRab = _activeRecipeMeta?.name === 'Rice & Beans';
+    const _isBc  = _activeRecipeMeta?.name === 'Bean Chili';
+    const _dishGlb = _isPof ? '/assets/3d/patato-onion-fry.glb'
+      : _isRab ? '/assets/3d/rice-and-beans.glb'
+      : _isBc  ? '/assets/3d/bean-chilli.glb' : '/assets/3d/vegetable_soup.glb';
     const soupLoader = new THREE.GLTFLoader();
     soupLoader.load(
-      assetUrl('/assets/3d/vegetable_soup.glb'),
+      assetUrl(_dishGlb),
       (gltf) => {
         const soup = gltf.scene;
         soup.traverse(c => { if (c.isMesh) { c.castShadow = true; c.receiveShadow = true; } });
@@ -1502,17 +1772,23 @@ const CookingGuide = (() => {
     card.classList.add('cg-out');
     setTimeout(() => {
       card.classList.remove('cg-out'); card.classList.add('cg-done');
+      const _meta = _activeRecipeMeta || RECIPES['squash-stew'];
+      const _subtitle = _meta.subtitle ? `<div class="cg-done-sub">${_meta.subtitle}</div>` : '';
+      const _storyBtn = _meta.subtitle
+        ? `<button class="cg-btn-story" id="cg-btn-story" style="pointer-events:auto">Hear the origin story &rarr;</button>`
+        : '';
       card.innerHTML = `
 <div class="cg-done-top">
-  <div class="cg-done-title">Three Sisters Stew &mdash; complete</div>
-  <div class="cg-done-sub">Baaniibaanesi-Naboob</div>
+  <div class="cg-done-title">${_meta.name} &mdash; complete</div>
+  ${_subtitle}
 </div>
 <div class="cg-done-btns">
-  <button class="cg-btn-story" id="cg-btn-story" style="pointer-events:auto">Hear the origin story &rarr;</button>
+  ${_storyBtn}
   <button class="cg-btn-reset" id="cg-btn-reset" style="pointer-events:auto">Cook again</button>
 </div>`;
       document.getElementById('cg-btn-reset').addEventListener('click', () => reset());
-      document.getElementById('cg-btn-story').addEventListener('click', () => {
+      const storyBtn = document.getElementById('cg-btn-story');
+      if (storyBtn) storyBtn.addEventListener('click', () => {
         if (typeof window.launchElderStory === 'function') window.launchElderStory();
         else window.dispatchEvent(new CustomEvent('cookingguide:story'));
       });
@@ -1551,7 +1827,7 @@ const CookingGuide = (() => {
 
     // Spot glow pulse
     if (_spotGlow) {
-      const step = STEPS[_currentStep];
+      const step = _S()[_currentStep];
       const active = step ? step.activeIngredients : [];
       const m0 = active[0] ? _getMesh(active[0]) : null;
       if (m0) {
@@ -1566,7 +1842,7 @@ const CookingGuide = (() => {
     }
 
     // Per-animation tick
-    const step = STEPS[_currentStep];
+    const step = _S()[_currentStep];
     if (step) {
       const slot = step.activeIngredients[0];
       const ingM = slot ? _getMesh(slot) : null;
@@ -1579,7 +1855,10 @@ const CookingGuide = (() => {
         case 'add_veggies': if (typeof Step6Veggies !== 'undefined') Step6Veggies.tick(dt); break;
         case 'add_beans_corn': if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.tick(dt); break;
         case 'stir_finish': if (!_chopWaiting && typeof Step8Stir !== 'undefined') Step8Stir.tick(dt); break;
-        case 'stir':    if (base) _tickStir(dt, base); break;
+        case 'bc_step':  if (!_chopWaiting && typeof BeanChiliSteps !== 'undefined') BeanChiliSteps.tick(dt); break;
+        case 'rab_step': if (!_chopWaiting && typeof RiceBeansSteps !== 'undefined') RiceBeansSteps.tick(dt); break;
+        case 'pof_step': if (!_chopWaiting && typeof PotatoFrySteps !== 'undefined') PotatoFrySteps.tick(dt); break;
+        case 'stir': { const _sb = base || (_potMesh ? _potMesh.position : null); if (_sb) _tickStir(dt, _sb); break; }
         default:        if (base) _tickAllParticles(dt, base, now); break;
       }
     }
@@ -1589,7 +1868,7 @@ const CookingGuide = (() => {
 
     // Countdown ring
     if (_countdownStart !== null) {
-      const s = STEPS[_currentStep];
+      const s = _S()[_currentStep];
       if (s && s.duration) {
         const p = Math.min((now - _countdownStart) / 1000 / s.duration, 1);
         const c = _q('#cg-ring-c');
@@ -1604,10 +1883,15 @@ const CookingGuide = (() => {
   function _set(id, v)     { const el = _q('#' + id); if (el) el.textContent = v || ''; }
 
   // ── Public API ────────────────────────────────────────────────────────────
-  function init(scene, camera, renderer, meshes) {
+  function init(scene, camera, renderer, meshes, recipeId) {
     destroy();
     _scene = scene; _camera = camera; _renderer = renderer;
     _meshes = meshes || []; _currentStep = 0; _initialized = true;
+
+    // Select recipe
+    const recipe = RECIPES[recipeId] || RECIPES['squash-stew'];
+    _activeSteps = recipe.steps;
+    _activeRecipeMeta = recipe;
 
     _buildCuttingBoard();
     _buildOrangePile();
@@ -1627,6 +1911,9 @@ const CookingGuide = (() => {
     if (typeof Step6Veggies !== 'undefined') Step6Veggies.init(_scene);
     if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.init(_scene);
     if (typeof Step8Stir !== 'undefined') Step8Stir.init(_scene);
+    if (typeof BeanChiliSteps !== 'undefined') BeanChiliSteps.init(_scene);
+    if (typeof RiceBeansSteps !== 'undefined') RiceBeansSteps.init(_scene);
+    if (typeof PotatoFrySteps !== 'undefined') PotatoFrySteps.init(_scene);
     _renderStep(0, true);
     _chime();
 
@@ -1636,7 +1923,7 @@ const CookingGuide = (() => {
   }
 
   function goToStep(n) {
-    _currentStep = Math.max(0, Math.min(n, TOTAL - 1));
+    _currentStep = Math.max(0, Math.min(n, _S().length - 1));
     _renderStep(_currentStep); _chime();
   }
 
@@ -1654,7 +1941,7 @@ const CookingGuide = (() => {
 
   function _nextStep() {
     if (!_nextReady) return;
-    if (_currentStep >= TOTAL - 1) _renderCompletion();
+    if (_currentStep >= _S().length - 1) _renderCompletion();
     else { _currentStep++; _renderStep(_currentStep); _chime(); }
   }
 
@@ -1674,6 +1961,9 @@ const CookingGuide = (() => {
     if (typeof Step6Veggies !== 'undefined') Step6Veggies.cleanup();
     if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.cleanup();
     if (typeof Step8Stir !== 'undefined') Step8Stir.cleanup();
+    if (typeof BeanChiliSteps !== 'undefined') BeanChiliSteps.cleanup();
+    if (typeof RiceBeansSteps !== 'undefined') RiceBeansSteps.cleanup();
+    if (typeof PotatoFrySteps !== 'undefined') PotatoFrySteps.cleanup();
     if (_stewMesh) { _stewMesh.visible = false; _stewMesh.scale.setScalar(0.001); }
     if (_potMesh) _potMesh.visible = false;
     _currentStep = 0; _countdownStart = null;
@@ -1696,6 +1986,9 @@ const CookingGuide = (() => {
     if (typeof Step6Veggies !== 'undefined') Step6Veggies.destroy();
     if (typeof Step7BeansCorn !== 'undefined') Step7BeansCorn.destroy();
     if (typeof Step8Stir !== 'undefined') Step8Stir.destroy();
+    if (typeof BeanChiliSteps !== 'undefined') BeanChiliSteps.destroy();
+    if (typeof RiceBeansSteps !== 'undefined') RiceBeansSteps.destroy();
+    if (typeof PotatoFrySteps !== 'undefined') PotatoFrySteps.destroy();
     _destroyOverlay();
 
     [_cuttingBoard, _knifeGroup, _spoonGroup, _spotGlow].forEach(obj => {
@@ -1721,6 +2014,8 @@ const CookingGuide = (() => {
     if (_audioCtx) { try { _audioCtx.close(); } catch (_) {} _audioCtx = null; }
     _scene = _camera = _renderer = _meshes = null;
     _currentStep = 0; _initialized = false; _isXR = false;
+    _activeSteps = RECIPES['squash-stew'].steps;
+    _activeRecipeMeta = RECIPES['squash-stew'];
     _animType = 'none'; _activeLerps = []; _origPositions = {};
     console.log('[CookingGuide] destroyed');
   }

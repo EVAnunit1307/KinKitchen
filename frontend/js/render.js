@@ -152,8 +152,8 @@ const KinKitchenRender = (() => {
 
     // Hero section
     const nation     = primaryRec?.culture || ctx?.culturalSignificance && KinKitchenApp.state.selectedNation || '–';
-    const titleOjib  = geminiRec?.name || primaryRec?.name || '–';
-    const titleEng   = geminiRec?.description || primaryRec?.description || '';
+    const titleOjib  = primaryRec?.name || geminiRec?.name || '–';
+    const titleEng   = primaryRec?.description || geminiRec?.description || '';
 
     _set('recipe-nation',         nation);
     _set('recipe-title-ojibwe',   titleOjib);
@@ -252,6 +252,24 @@ const KinKitchenRender = (() => {
       }).join('');
       sugWrap.style.display = '';
 
+      function _selectRecipe(recId, list) {
+        // Always update selected class from the recipe ID in the DOM card
+        list.querySelectorAll('.kk-recipe-sug').forEach(el => {
+          el.classList.toggle('kk-recipe-sug--selected', el.dataset.recipeId === recId);
+        });
+        // Try to find full recipe object from upload data; fall back to id-only stub
+        const found = KinKitchenApp.state.uploadData?.suggestedRecipes?.find(s => s.recipe.id === recId);
+        if (found) {
+          KinKitchenApp.state.activeRecipe = found;
+          _set('recipe-title-ojibwe',  found.recipe.name);
+          _set('recipe-title-english', found.recipe.description);
+          _set('recipe-nation',        found.recipe.culture);
+        } else {
+          // No upload data — store minimal stub so btn-enter-kitchen3d can read the ID
+          KinKitchenApp.state.activeRecipe = { recipe: { id: recId } };
+        }
+      }
+
       if (!sugList.dataset.recipeSelectListener) {
         sugList.dataset.recipeSelectListener = '1';
         sugList.addEventListener('click', e => {
@@ -260,35 +278,15 @@ const KinKitchenRender = (() => {
           if (buildBtn) {
             e.stopPropagation();
             const recId = buildBtn.dataset.recipeId;
-            const found = KinKitchenApp.state.uploadData?.suggestedRecipes?.find(s => s.recipe.id === recId);
-            if (found) {
-              KinKitchenApp.state.activeRecipe = found;
-              _set('recipe-title-ojibwe',  found.recipe.name);
-              _set('recipe-title-english', found.recipe.description);
-              _set('recipe-nation',        found.recipe.culture);
-              sugList.querySelectorAll('.kk-recipe-sug').forEach(el => {
-                el.classList.toggle('kk-recipe-sug--selected', el.dataset.recipeId === recId);
-              });
-              document.getElementById('btn-enter-kitchen3d')?.click();
-            }
+            _selectRecipe(recId, sugList);
+            document.getElementById('btn-enter-kitchen3d')?.click();
             return;
           }
 
           // Card click → select recipe
           const item = e.target.closest('.kk-recipe-sug');
           if (!item) return;
-          const recId = item.dataset.recipeId;
-          const uploadData = KinKitchenApp.state.uploadData;
-          const found = uploadData?.suggestedRecipes?.find(s => s.recipe.id === recId);
-          if (found) {
-            KinKitchenApp.state.activeRecipe = found;
-            _set('recipe-title-ojibwe',  found.recipe.name);
-            _set('recipe-title-english', found.recipe.description);
-            _set('recipe-nation',        found.recipe.culture);
-            sugList.querySelectorAll('.kk-recipe-sug').forEach(el => {
-              el.classList.toggle('kk-recipe-sug--selected', el.dataset.recipeId === recId);
-            });
-          }
+          _selectRecipe(item.dataset.recipeId, sugList);
         });
       }
     } else if (sugWrap) {
@@ -302,10 +300,13 @@ const KinKitchenRender = (() => {
     const names = ctx?.traditionalNames;
     const ing   = collectIngredients(data)[0];
 
-    // Title
-    const title = names?.length
-      ? `The story of ${names[0].name || _cap(ing?.name || 'this ingredient')}`
-      : `The story of ${_cap(ing?.name || 'this ingredient')}`;
+    // Title — use recipe name if available
+    const recipeName = KinKitchenApp.state.activeRecipe?.recipe?.name;
+    const title = recipeName
+      ? recipeName
+      : names?.length
+        ? `The story of ${names[0].name || _cap(ing?.name || 'this ingredient')}`
+        : `The story of ${_cap(ing?.name || 'this ingredient')}`;
     _set('story-title', title);
 
     // Body — cultural significance or uses
@@ -334,6 +335,31 @@ const KinKitchenRender = (() => {
     // Show TTS chip if story is available
     const chip = document.getElementById('story-audio-chip');
     if (chip) chip.style.display = '';
+
+    // Auto-show recipe video
+    const _VIDEO_MAP = {
+      'potato-onion':     '/assets/potato-onion-fry.mp4',
+      'potato-onion-fry': '/assets/potato-onion-fry.mp4',
+      'rice-beans':       '/assets/rice-and-beans.mp4',
+      'rice-and-beans':   '/assets/rice-and-beans.mp4',
+      'bean-chili':       '/assets/bean-chilli.mp4',
+      'bean-chilli':      '/assets/bean-chilli.mp4',
+    };
+    const recipeId  = KinKitchenApp.state.activeRecipe?.recipe?.id || '';
+    const videoPath = _VIDEO_MAP[recipeId];
+    const genBtn    = document.getElementById('story-generate-video-btn');
+    const videoWrap = document.getElementById('story-video-wrap');
+    const videoLoad = document.getElementById('story-video-loading');
+    const videoEl   = document.getElementById('story-video');
+    if (videoPath && genBtn && videoWrap && videoEl) {
+      genBtn.style.display  = 'none';
+      videoWrap.style.display = '';
+      if (videoLoad) videoLoad.style.display = 'none';
+      videoEl.src = window.assetUrl ? window.assetUrl(videoPath) : videoPath;
+      videoEl.style.display = '';
+    } else if (genBtn) {
+      genBtn.style.display = '';
+    }
   }
 
   // ── SCREEN 8: Word of the Day ─────────────────────────────────────────────
